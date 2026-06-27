@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DAFOR Survey">
+<title>DAFOR Survey</title>
+<style>
+  :root{ --d:#14532d; --a:#15803d; --f:#4d9c5a; --o:#a7d8ae; --r:#dcefe0; --la:#f4b400; --ink:#1b2a23; --line:#cdd6cf; --bg:#f4f7f4; --new:#e8f1dc; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px}
+  header{position:sticky;top:0;z-index:30;background:#1f3b2c;color:#fff;padding:8px 10px 10px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  h1{margin:0 0 6px;font-size:18px;letter-spacing:.2px}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:flex-end}
+  .meta label{font-size:11px;opacity:.85;display:block;line-height:1.3}
+  .meta input,.meta select{font-size:16px;padding:6px 8px;border:none;border-radius:7px;min-height:38px;background:#fff;color:#111}
+  .meta select{min-width:130px}
+  .meta input[type=date]{min-width:140px}
+  #recorder{width:140px}#weather{width:150px}
+  .bar{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .bar button{flex:1 1 auto;min-height:40px;border:none;border-radius:8px;font-size:14px;font-weight:600;padding:8px 10px;background:#cfe3d4;color:#13361f}
+  .bar button.fin{background:#2f6b3d;color:#fff}
+  .bar button.warn{background:#f3c9c2;color:#5a1c12}
+  .count{font-size:12px;opacity:.95;margin-top:6px}
+  .search{position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 10px 4px;border-bottom:1px solid var(--line)}
+  .search input{width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:9px}
+  .chips{display:flex;gap:6px;padding:8px 10px;flex-wrap:wrap;background:var(--bg);border-bottom:1px solid var(--line)}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:16px;padding:6px 12px;font-size:13px;font-weight:600;color:#33493a;min-height:36px}
+  .chip.on{background:#2f6b3d;color:#fff;border-color:transparent}
+  #cnotewrap{padding:0 10px 8px}
+  #cnotewrap textarea{width:100%;min-height:72px;font-size:14px;padding:9px;border:1px solid var(--line);border-radius:9px;-webkit-user-select:text;user-select:text}
+  .legend{font-size:11px;color:#566;padding:4px 10px 8px}
+  #keytoggle{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:#4d9c5a;border:none;border-radius:12px;padding:4px 12px;margin-left:6px;cursor:pointer;vertical-align:middle;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  #keytoggle.on{background:#2f6b3d}
+  #keypanel{display:none;margin:0 10px 8px;padding:8px 10px;background:#fbfdfb;border:1px solid var(--line);border-radius:10px;font-size:11.5px;color:#3a473f;line-height:1.5}
+  #keypanel.show{display:block}
+  #keypanel .kr{display:flex;gap:8px;align-items:baseline;padding:2px 0}
+  #keypanel .kk{display:inline-block;font-weight:800;color:#243;min-width:64px;letter-spacing:.5px}
+  #keypanel .kk.la{color:#8a6500}
+  #keypanel .kk.grey{font-weight:600;color:#7c8a80;font-style:italic}
+  #keypanel .bdg{flex:none;min-width:30px;text-align:center}
+  table{border-collapse:separate;border-spacing:0;width:100%}
+  thead th{position:sticky;top:0;background:#eef3ee;z-index:10;font-size:12px;color:#456;padding:6px 2px;border-bottom:1px solid var(--line)}
+  thead th.sp{text-align:left;padding-left:10px}
+  td{border-bottom:1px solid var(--line);vertical-align:middle;padding:0}
+  td.sp{padding:7px 6px 7px 10px;line-height:1.25}
+  .sci{font-style:italic;font-weight:600;font-size:15.5px}
+  .com{color:#5d6b62;font-size:12.5px}
+  .prev{display:inline-block;margin-top:2px;font-size:11px;color:#7c8a80;background:#eef2ee;border:1px solid #dde5de;border-radius:6px;padding:1px 6px}
+  .bdg{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 5px;margin:2px 0 0 5px;vertical-align:middle}
+  .bdg.nbl{background:#fde68a;color:#7a4b00}
+  .bdg.chk{background:#fde2cf;color:#7a3a12}
+  .bdg.veg{background:#e2e8f0;color:#33415a}
+  .bdg.loc{background:#dcecff;color:#11447a}
+  .bdg.nat{background:#e6e0f4;color:#4b2e83}
+  tr.newrow{background:var(--new)}
+  tr.newrow td.sp::after{content:"new";float:right;font-size:10px;color:#3f6b2a;font-weight:700;background:#d6e8c6;border-radius:5px;padding:1px 5px;margin-left:6px}
+  tr.warnrow td.sp{box-shadow:inset 3px 0 0 #e0a800}
+  .cell{width:42px;text-align:center}
+  .btn{width:40px;height:46px;margin:3px auto;border:1.5px solid var(--line);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#33413a;background:#fff;user-select:none;touch-action:manipulation;cursor:pointer}
+  .btn.on{color:#fff;border-color:transparent}
+  .btn.on.D{background:var(--d)} .btn.on.A{background:var(--a)} .btn.on.F{background:var(--f)}
+  .btn.on.O{background:var(--o);color:#143} .btn.on.R{background:var(--r);color:#143}
+  .btn.la.on{background:var(--la);color:#3a2c00;border-color:transparent}
+  .notebtn{width:34px;height:40px;margin:0 auto;border:none;background:transparent;font-size:20px;opacity:.5;cursor:pointer}
+  .notebtn.has{opacity:1;color:#2f6b3d}
+  tr.noterow td{padding:0 10px 8px}
+  .dpanel{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+  .dpanel .dnote{font-size:14px;padding:9px;border:1px solid var(--line);border-radius:8px;width:100%}
+  .dctl{display:flex;gap:8px;flex-wrap:wrap}
+  .tgl{border:1px solid var(--line);background:#fff;border-radius:8px;padding:9px 11px;font-size:13px;font-weight:600;color:#33493a;min-height:42px}
+  .tgl.on{background:#2f6b3d;color:#fff;border-color:transparent}
+  .tgl.del{background:#fbe9e6;color:#a12;border-color:#f0cfc8}
+  .tgl.clr{background:#eef1f4;color:#445;border-color:#dde3ea}
+  .addwrap{padding:12px 10px 70px}
+  .addwrap h2{font-size:14px;margin:6px 0;color:#33493a}
+  .addrow{display:flex;gap:8px;position:relative}
+  .addrow input{flex:1;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:9px}
+  .addrow button{min-width:64px;border:none;border-radius:9px;background:#2f6b3d;color:#fff;font-weight:700;font-size:15px}
+  #suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:48vh;background:#fff;display:none;-webkit-overflow-scrolling:touch;box-shadow:0 6px 18px rgba(0,0,0,.16);z-index:45}
+  #suggest.up{top:auto;bottom:calc(100% + 6px)}
+  #suggest .s{padding:12px;border-bottom:1px solid #eef2ee;cursor:pointer;line-height:1.3}
+  #suggest .s:active{background:#eef5ef}
+  #suggest .s i{font-weight:600;font-style:italic}
+  #suggest .s .v{color:#5d6b62;font-size:12.5px;margin-left:6px}
+  #suggest .s .syn{color:#9a6b1f;font-size:11.5px;margin-left:6px;font-style:normal}
+  .hint{font-size:11.5px;color:#6b786f;margin:6px 2px}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1f3b2c;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .25s;z-index:50;pointer-events:none}
+  .toast.show{opacity:.96}
+  /* persistent action prompt (start OS logging) — stays until tapped */
+  #startprompt{position:fixed;left:10px;right:10px;bottom:18px;background:#2f6b3d;color:#fff;padding:12px 14px;border-radius:12px;font-size:14px;font-weight:600;z-index:55;box-shadow:0 4px 14px rgba(0,0,0,.28);display:none;align-items:center;gap:10px;line-height:1.35}
+  #startprompt.show{display:flex}
+  #startprompt .x{margin-left:auto;flex:none;background:rgba(255,255,255,.22);border:none;color:#fff;font-size:15px;font-weight:800;border-radius:8px;min-width:38px;min-height:34px;cursor:pointer}
+  #modal,#finishmodal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none;align-items:center;justify-content:center;padding:24px}
+  #modal .box,#finishmodal .box{background:#fff;border-radius:14px;padding:18px;max-width:360px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+  #modal p{margin:0 0 14px;font-size:15px;color:#1b2a23;line-height:1.35}
+  .mbtns{display:flex;gap:10px}
+  #modal button,#finishmodal button{flex:1;min-height:46px;border:none;border-radius:10px;font-size:15px;font-weight:700}
+  #modalno{background:#e7ece8;color:#33413a}
+  #modalyes{background:#b3261e;color:#fff}
+  #finishmodal{z-index:65}
+  #finishmodal h3{margin:0 0 10px;font-size:16px}
+  #fbody{font-size:14px;line-height:1.7;margin-bottom:14px}
+  #finishmodal button{background:#e7ece8;color:#33413a}
+  #finishmodal #fexp{background:#2f6b3d;color:#fff}
+  #textmodal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;display:none;flex-direction:column;padding:14px}
+  #textmodal .hd{color:#fff;font-size:13px;margin-bottom:8px}
+  #textmodal textarea{flex:1;width:100%;font-size:13px;font-family:monospace;border-radius:10px;border:none;padding:10px;-webkit-user-select:text;user-select:text}
+  #textmodal .row{display:flex;gap:10px;margin-top:10px}
+  #textmodal button{flex:1;min-height:46px;border:none;border-radius:10px;font-size:15px;font-weight:700;background:#cfe3d4;color:#13361f}
+  /* ---- import overlay (new in importer) ---- */
+  #importscreen{position:fixed;inset:0;background:var(--bg);z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center}
+  #importscreen .card{max-width:420px;width:100%}
+  #importscreen h1{color:var(--d);font-size:22px;margin:0 0 6px}
+  #importscreen p{color:#4a574f;font-size:14px;line-height:1.5;margin:0 0 20px}
+  #importscreen .imp{display:block;width:100%;min-height:52px;border:none;border-radius:11px;background:#2f6b3d;color:#fff;font-size:16px;font-weight:700;margin-bottom:12px;cursor:pointer}
+  #importscreen .sub{display:block;width:100%;min-height:48px;border:1px solid var(--line);border-radius:11px;background:#fff;color:#33493a;font-size:15px;font-weight:600;cursor:pointer}
+  #importscreen .err{color:#a12; font-size:13px; margin-top:14px; min-height:18px}
+  #importscreen .resume{margin-top:18px;font-size:13px;color:#33493a}
+  #importscreen .resume b{color:var(--d)}
+  #pickfile{display:none}
+</style>
+</head>
+<body>
+
+<!-- ===== IMPORT SCREEN (shown until a pack is loaded) ===== -->
+<div id="importscreen">
+  <div class="card">
+    <h1>DAFOR Survey</h1>
+    <p>Load a site pack to begin. The pack carries the site’s species baseline, compartments, notable list and the full county checklist — everything works offline once loaded.</p>
+    <button class="imp" onclick="document.getElementById('pickfile').click()">📂 Load site pack…</button>
+    <button class="sub" id="resumeBtn" style="display:none" onclick="resumeLast()">↩︎ Resume last site</button>
+    <input type="file" id="pickfile" accept=".json,application/json">
+    <div class="err" id="imperr"></div>
+    <div class="resume" id="resumeInfo"></div>
+  </div>
+</div>
+
+<!-- ===== SURVEY UI (hidden until pack loaded) ===== -->
+<div id="app" style="display:none">
+<header>
+  <h1 id="siteTitle">— · DAFOR survey</h1>
+  <div class="meta">
+    <div><label>Date</label><input type="date" id="date"></div>
+    <div><label>Recorder</label><input id="recorder" value="Luke Bristow"></div>
+    <div><label>Compartment</label><select id="compartment"></select></div>
+    <div><label>Weather</label><input id="weather" placeholder="—"></div>
+  </div>
+  <div class="bar">
+    <button class="fin" onclick="finishSurvey()" title="Finish: summary + notable list, and a reminder to stop OS route logging">✓ Finish</button>
+    <button onclick="showHelp()" title="What each button does + the survey workflow">ⓘ Help</button>
+    <button onclick="sortList()" title="Sort the species list alphabetically">⇅ Sort A–Z</button>
+    <button onclick="exportCSV()" title="Download the 24-column master CSV straight to Files">⬇ Export</button>
+    <button onclick="shareCSV()" title="Share the master CSV via the iOS share sheet (Drive, AirDrop, Mail…)">📤 Share</button>
+    <button onclick="shareGeoJSON()" title="Export located records (with 📍 GPS) as GeoJSON points for ArcGIS">📍 Points</button>
+    <button onclick="copySummary()" title="Copy a plain-text summary of this compartment to the clipboard">⧉ Copy</button>
+    <button onclick="backup()" title="Save the full survey state to a JSON file — a lossless recovery point">💾 Backup</button>
+    <button onclick="document.getElementById('restoreFile').click()" title="Reload a saved backup JSON (load the matching site pack first)">⤒ Restore</button>
+    <input type="file" id="restoreFile" accept="application/json,text/plain,.json" style="display:none" onchange="restoreBackup(this.files[0]); this.value='';">
+    <button onclick="toggleCompNotes()" title="Show/hide the compartment notes box">📝 Notes</button>
+    <button onclick="switchPack()" title="Load a different site pack — records stay saved per site">⇄ Pack</button>
+    <button class="warn" onclick="resetAll()" title="Clear all DAFOR entries for this compartment (species list stays)">↺ Reset</button>
+  </div>
+  <div class="count" id="count">—</div>
+  <div class="count" id="savedAgo" style="display:none"></div>
+</header>
+
+<div id="helpPanel" style="display:none;position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.45);padding:18px;overflow:auto">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:17px;flex:1">DAFOR Survey — quick help</b><button onclick="document.getElementById('helpPanel').style.display='none'" style="background:#cfe3d4;color:#13361f;border:none;border-radius:8px;padding:8px 14px;font-weight:700">Close</button></div>
+    <p style="font-size:13px;color:#4a574f;margin:.3em 0 1em">Pick a compartment, then for each species tap a DAFOR letter. Add anything not listed in the box at the bottom. Export or back up before you finish.</p>
+    <div id="helpBody" style="font-size:13.5px;line-height:1.5"></div>
+  </div>
+</div>
+
+<div id="opennote" style="background:#fff3cd;color:#5a4a00;padding:9px 12px;font-size:13px;border-bottom:1px solid #e6d27a">⚠️ If the D/A/F/O/R buttons don't highlight when tapped, this opened in a preview that blocks scripts. Tap the <b>Share</b> icon → <b>Open in Safari</b>. Species below are visible either way.</div>
+<div class="search"><input id="filter" placeholder="🔍 Filter species (name or common)…" autocomplete="off"></div>
+<div class="chips">
+  <button class="chip on" data-mode="all" onclick="setMode('all',this)">All</button>
+  <button class="chip" data-mode="tofind" onclick="setMode('tofind',this)">To find</button>
+  <button class="chip" data-mode="recorded" onclick="setMode('recorded',this)">Recorded</button>
+  <button class="chip" data-mode="new" onclick="setMode('new',this)">New</button>
+  <button class="chip" data-mode="notable" onclick="setMode('notable',this)">Notable</button>
+  <button class="chip" data-mode="check" onclick="setMode('check',this)">Check ID</button>
+  <button class="chip" data-mode="herebefore" onclick="setMode('herebefore',this)">Here before</button>
+  <button class="chip" data-mode="earlier" onclick="setMode('earlier',this)">Earlier yrs</button>
+</div>
+<div id="cnotewrap" style="display:none"><textarea id="compnotes" placeholder="Compartment notes / management recommendations…"></textarea></div>
+<div class="legend">Tap D·A·F·O·R (tap again clears); LA adds on top. ⋯ opens details (note · Check ID · flowering · location). ◆ = notable. Grey chip = baseline record. <button id="keytoggle" onclick="toggleKey()" aria-expanded="false">❔ Symbols key</button></div>
+<div id="keypanel">
+  <div class="kr"><span class="kk">D A F O R</span> Dominant · Abundant · Frequent · Occasional · Rare. Tap again to clear.</div>
+  <div class="kr"><span class="kk la">LA</span> Locally Abundant — adds on top of a DAFOR value (e.g. O+LA).</div>
+  <div class="kr"><span class="kk">⋯</span> Per-record details: free-text note, Check ID, flowering/vegetative, GPS capture.</div>
+  <div class="kr"><span class="bdg nbl">◆</span> Notable — GB / England Red List or county scarce list. Tap-hold the ◆ to read the status.</div>
+  <div class="kr"><span class="bdg chk">?ID</span> Flagged for identity confirmation.</div>
+  <div class="kr"><span class="bdg veg">veg</span> Recorded not in flower/fruit.</div>
+  <div class="kr"><span class="bdg loc">📍</span> A grid location was captured for this record.</div>
+  <div class="kr"><span class="bdg nat">Ar</span> Nativity other than native (Ar = archaeophyte, Ne = neophyte, Ca = casual). Native carries no badge.</div>
+  <div class="kr"><span class="kk grey">seen…</span> Baseline record carried in from the site pack (grey chip).</div>
+</div>
+
+<table>
+  <thead><tr>
+    <th class="sp">Species</th><th class="cell">D</th><th class="cell">A</th><th class="cell">F</th>
+    <th class="cell">O</th><th class="cell">R</th><th class="cell">LA</th><th class="cell">⋯</th>
+  </tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+
+<div class="addwrap">
+  <h2>Add species found</h2>
+  <div class="addrow">
+    <input id="addbox" placeholder="Type to search species…" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+    <button onclick="addFromBox()">Add</button>
+    <div id="suggest"></div>
+  </div>
+  <div class="hint" style="font-weight:700;color:#2f6b3d" id="buildstamp">Build: 2026-06-24 · importer v13</div>
+  <div class="hint">Type 2+ letters to search the pack’s name list; tap a result to add. Synonyms resolve to the accepted name automatically. Or type any name and tap Add.</div>
+</div>
+</div><!-- /#app -->
+
+<div id="modal"><div class="box"><p id="modalmsg"></p><div class="mbtns"><button id="modalno">Cancel</button><button id="modalyes">Confirm</button></div></div></div>
+<div id="finishmodal"><div class="box"><h3>Finish — <span id="fcomp"></span></h3><div id="fbody"></div><div class="mbtns"><button onclick="document.getElementById('finishmodal').style.display='none'">Back</button><button id="fexp" onclick="document.getElementById('finishmodal').style.display='none';exportCSV()">⬇ Export</button></div></div></div>
+<div id="textmodal"><div class="hd">Select all and copy / share, or save to a note:</div><textarea id="textarea" readonly></textarea><div class="row"><button onclick="selAll()">Select all</button><button onclick="document.getElementById('textmodal').style.display='none'">Close</button></div></div>
+<div class="toast" id="toast"></div>
+<div id="startprompt"><span>📍 Survey started — start route recording in the <b>OS Maps</b> app now.</span><button class="x" onclick="dismissStart()" aria-label="Dismiss">OK</button></div>
+<script>
+/* ============================================================
+   DAFOR Survey — site-pack importer (v12)
+   Pack provides: site, scheme, vice_county, compartments[],
+   baseline[], notable_lookup{}, nativity_lookup{},
+   synonym_map{}, pick[]
+   ============================================================ */
+
+let PACK=null;            // the loaded pack
+let SITE="", COMPS=[], SPECIES=[];   // derived from pack for the active compartment view
+let NOTABLE={}, NATIV={}, SYN={}, PICK=[];
+let baseSet=new Set();
+let order=[], state={}, siteExtras=[];
+let surveyStart=null, surveyEnd=null;
+let filterMode='all';
+const DAF=['D','A','F','O','R'];
+const LASTKEY="dafor::lastpack";   // stores last pack JSON for resume
+
+function el(id){return document.getElementById(id)}
+const HELP=[
+ ["D A F O R","Tap a letter per species: Dominant / Abundant / Frequent / Occasional / Rare. Tap the same letter again to clear it."],
+ ["LA","Locally Abundant modifier — tap with or without a DAFOR letter where a species is patchy but dominant in places."],
+ ["⋯ detail","Per-species panel: free note, ?ID (Check-ID) flag, flowering vs vegetative, and 📍 GPS to locate that record."],
+ ["Add species box","Type a species not on the list. Synonyms resolve to the BSBI accepted name; notable status flags live as you type."],
+ ["Filter chips","Narrow the list: All / to find / recorded / added / notable / ?ID / Here before (baseline in this compartment) / Earlier yrs."],
+ ["✓ Finish","Shows a summary and the notable list, and reminds you to stop OS Maps route logging."],
+ ["⬇ Export","Downloads the 24-column master CSV straight to Files."],
+ ["📤 Share","Sends the master CSV through the iOS share sheet (Drive, AirDrop, Mail…). iOS adds a companion .txt — ignore it."],
+ ["📍 Points","Exports located records (those with a 📍 GPS point) as GeoJSON for ArcGIS Pro."],
+ ["⧉ Copy","Copies a plain-text summary of this compartment to the clipboard."],
+ ["💾 Backup","Saves the full survey state to a JSON file — a lossless recovery point you can keep or move between devices."],
+ ["⤒ Restore","Reloads a saved backup JSON. Load the matching site pack first."],
+ ["📝 Notes","Shows/hides the compartment notes box."],
+ ["⇄ Pack","Loads a different site pack. Records stay saved per site, so you can switch back."],
+ ["↺ Reset","Clears all DAFOR entries for this compartment (the species list stays)."],
+];
+function showHelp(){el('helpBody').innerHTML=HELP.map(function(x){return '<div style="padding:6px 0;border-bottom:1px solid #eef3ee"><b>'+x[0]+'</b><br><span style="color:#5d6b62">'+x[1]+'</span></div>';}).join('');el('helpPanel').style.display='block';}
+document.addEventListener('click',function(e){if(e.target&&e.target.id==='helpPanel')e.target.style.display='none';});
+function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),1600)}
+
+/* ---------- normalisation + synonym resolution ---------- */
+function norm(s){return (s||"").toLowerCase().replace(/\s+(agg\.|s\.l\.|s\.s\.)$/,'').replace(/\s+/g,' ').trim();}
+// resolve any typed/picked name to the pack's accepted name (offline, via SYN)
+function resolveAccepted(name){
+  const n=(name||"").replace(/\s+/g,' ').trim();
+  if(!n) return n;
+  if(SYN[n]) return SYN[n];                 // exact synonym hit
+  // case-insensitive fallback against synonym + accepted keys
+  const low=n.toLowerCase();
+  if(window._synLow && window._synLow[low]) return window._synLow[low];
+  return n;                                  // already accepted, or unknown — keep as typed
+}
+
+/* ---------- notable + nativity lookups (subsp/agg fallback) ---------- */
+function notableOf(sci){
+  if(NOTABLE[sci]) return NOTABLE[sci];
+  const sp=sci.replace(/ (subsp|var|f)\.?.*/,'').replace(/ (agg\.|s\.l\.|s\.s\.)$/,'').trim();
+  return NOTABLE[sp]||NOTABLE[sci.replace(/ (agg\.|s\.l\.|s\.s\.)$/,'').trim()]||"";
+}
+function nativOf(sci){
+  if(NATIV[sci]) return NATIV[sci];
+  const sp=sci.replace(/ (subsp|var|f)\.?.*/,'').replace(/ (agg\.|s\.l\.|s\.s\.)$/,'').trim();
+  return NATIV[sp]||"";
+}
+
+/* ===================== PACK IMPORT ===================== */
+function applyPack(pack){
+  PACK=pack;
+  SITE = pack.site||"—";
+  COMPS = (pack.compartments||[]).map(c=>c.id);
+  // baseline -> SPECIES (sci/com/prev). prev carries last_date + which compartments.
+  SPECIES = (pack.baseline||[]).map(b=>({
+    sci:b.taxon, com:b.vernacular||"",
+    comps:(b.compartments||[]), lastDate:(b.last_date||""),
+    prev: (b.last_date?("seen "+b.last_date):"") + (b.compartments&&b.compartments.length?("  ["+b.compartments.join(", ")+"]"):"")
+  }));
+  // lookup: taxon -> {comps, lastDate} for the history filters
+  window.baseHist={}; SPECIES.forEach(s=>{ window.baseHist[s.sci]={comps:s.comps,lastDate:s.lastDate}; });
+  NOTABLE = pack.notable_lookup||{};
+  NATIV   = pack.nativity_lookup||{};
+  SYN     = pack.synonym_map||{};
+  PICK    = (pack.pick||[]).map(p=> typeof p==='string'?{n:p,v:(NATIV[p]?"":"")}:p);
+  // PICK entries: pack 'pick' is a flat name array; attach vernacular where known via baseline/com is absent,
+  // so just carry name; vernacular shown only if present in a {n,v} object.
+  if(pack.pick && typeof pack.pick[0]==='string'){
+    PICK = pack.pick.map(n=>({n:n, v:""}));
+  }
+  baseSet = new Set(SPECIES.map(s=>s.sci));
+  // lowercase synonym index for case-insensitive resolution
+  window._synLow={};
+  for(const k in SYN){ window._synLow[k.toLowerCase()]=SYN[k]; }
+  // build compartment dropdown
+  const sel=el('compartment'); sel.innerHTML='';
+  (pack.compartments||[]).forEach(c=>{
+    const o=document.createElement('option');
+    o.value=c.id; o.textContent=c.name?(c.id+" — "+c.name):c.id;
+    sel.appendChild(o);
+  });
+  // pick-name index for add box
+  window.meta_byname={}; PICK.forEach(p=>window.meta_byname[p.n.toLowerCase()]=p);
+  el('siteTitle').textContent = SITE+" · DAFOR survey ("+(pack.vice_county||"VC?")+")";
+  el('buildstamp').textContent = "Build 2026-06-24 · importer v13 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
+  if(!el('date').value){ el('date').value=new Date().toISOString().slice(0,10); }
+  // persist for resume
+  try{ localStorage.setItem(LASTKEY, JSON.stringify(pack)); }catch(e){}
+  el('importscreen').style.display='none';
+  el('app').style.display='block';
+  load();
+  toast("Loaded "+SITE+" — "+SPECIES.length+" baseline taxa");
+  try{const _rc=Object.values(state).filter(r=>r&&(r.daf!=null||r.la)).length;
+    if(_rc>0)setTimeout(()=>toast("Restored "+_rc+" record"+(_rc===1?"":"s")+" for this compartment"),1900);}catch(e){}
+}
+
+function readPackFile(file){
+  el('imperr').textContent='';
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const pack=JSON.parse(r.result);
+      if(!pack.site || !pack.compartments || !pack.baseline){
+        el('imperr').textContent="That file doesn't look like a site pack (missing site / compartments / baseline).";
+        return;
+      }
+      applyPack(pack);
+    }catch(e){
+      el('imperr').textContent="Couldn't read that file: "+e.message;
+    }
+  };
+  r.onerror=()=>{ el('imperr').textContent="Couldn't open the file."; };
+  r.readAsText(file);
+}
+
+function resumeLast(){
+  try{
+    const raw=localStorage.getItem(LASTKEY);
+    if(!raw){ el('imperr').textContent="No previous pack stored on this device."; return; }
+    applyPack(JSON.parse(raw));
+  }catch(e){ el('imperr').textContent="Stored pack was unreadable: "+e.message; }
+}
+
+function switchPack(){
+  confirmModal("Load a different site pack? Records already saved on this device stay saved per site.",()=>{
+    el('app').style.display='none';
+    el('importscreen').style.display='flex';
+    showResumeInfo();
+  });
+}
+
+function showResumeInfo(){
+  try{
+    const raw=localStorage.getItem(LASTKEY);
+    if(raw){
+      const p=JSON.parse(raw);
+      el('resumeBtn').style.display='block';
+      el('resumeInfo').innerHTML="Last loaded: <b>"+(p.site||"—")+"</b> ("+((p.baseline||[]).length)+" baseline taxa)";
+    }
+  }catch(e){}
+}
+/* ===================== STATE: load / save ===================== */
+function key(){return "dafor::"+SITE+"::"+(el('compartment').value.trim()||"-")}
+function extrasKey(){return "extras::"+SITE}
+function newRec(){return {daf:null,la:false,note:"",check:false,veg:false,lat:null,lon:null}}
+function markStart(){if(!surveyStart){surveyStart=Date.now();save();
+  el('startprompt').classList.add('show');}}
+function dismissStart(){el('startprompt').classList.remove('show');}
+const meta=()=>({site:SITE,scheme:(PACK&&PACK.scheme)||"",vc:(PACK&&PACK.vice_county)||"",date:el('date').value,recorder:el('recorder').value,compartment:el('compartment').value.trim()||"—",weather:el('weather').value});
+
+function load(){
+  const saved=JSON.parse(localStorage.getItem(key())||"null");
+  const rec=(saved&&saved.records)||{};
+  siteExtras=JSON.parse(localStorage.getItem(extrasKey())||"[]");
+  ((saved&&saved.extras)||[]).forEach(x=>{ if(!siteExtras.find(e=>e.sci===x.sci)) siteExtras.push(x); });
+  order=[];
+  SPECIES.forEach(s=>order.push(s.sci));
+  siteExtras.forEach(x=>{ if(!order.includes(x.sci)) order.push(x.sci); });
+  if(saved&&saved.order){const ix={};saved.order.forEach((s,i)=>ix[s]=i);order.sort((a,b)=>(ix[a]==null?9999:ix[a])-(ix[b]==null?9999:ix[b]));}
+  state={};
+  order.forEach(s=>{ state[s]=rec[s]?{...newRec(),...rec[s]}:newRec() });
+  window.extraCom={}; siteExtras.forEach(x=>window.extraCom[x.sci]=x.com||"");
+  surveyStart=(saved&&saved.start)||null;
+  surveyEnd=(saved&&saved.end)||null;
+  el('compnotes').value=(saved&&saved.compnotes)||"";
+  el('weather').value=(saved&&saved.weather)||el('weather').value;
+  render();
+}
+
+function save(){
+  const extras=order.filter(s=>!baseSet.has(s)).map(s=>({sci:s,com:(window.extraCom&&window.extraCom[s])||""}));
+  localStorage.setItem(key(),JSON.stringify({records:state,order:order,start:surveyStart,end:surveyEnd,compnotes:el('compnotes').value,weather:el('weather').value,extras:extras}));
+  localStorage.setItem(extrasKey(),JSON.stringify(extras));
+}
+
+function comName(sci){const b=SPECIES.find(s=>s.sci===sci); if(b)return b.com;
+  return (window.extraCom&&window.extraCom[sci])|| (window.meta_byname&&window.meta_byname[sci.toLowerCase()]&&window.meta_byname[sci.toLowerCase()].v) || "";}
+function prevTag(sci){const b=SPECIES.find(s=>s.sci===sci);return b?b.prev:""}
+
+/* ===================== RENDER ===================== */
+function esc(s){return s.replace(/'/g,"\\'")}
+function he(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function ae(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}
+
+function badges(sci,st){
+  let b='';
+  const nb=notableOf(sci);
+  if(nb) b+='<span class="bdg nbl" title="'+ae(nb)+'">◆</span>';
+  if(st.check) b+='<span class="bdg chk">?ID</span>';
+  if(st.veg) b+='<span class="bdg veg">veg</span>';
+  if(st.lat!=null) b+='<span class="bdg loc">📍</span>';
+  const nv=nativOf(sci);
+  if(nv && nv!=='native') b+='<span class="bdg nat" title="nativity">'+he(nv[0].toUpperCase()+nv.slice(1,3))+'</span>';
+  return b;
+}
+
+function rowMatches(sci,st,q){
+  if(q){ const c=comName(sci); if(!(sci.toLowerCase().includes(q)||(c&&c.toLowerCase().includes(q)))) return false; }
+  if(filterMode==='all') return true;
+  const recorded = st.daf||st.la||st.check||st.lat!=null;
+  if(filterMode==='tofind') return !recorded;
+  if(filterMode==='recorded') return recorded;
+  if(filterMode==='new') return !baseSet.has(sci);
+  if(filterMode==='notable') return !!notableOf(sci);
+  if(filterMode==='check') return !!st.check;
+  if(filterMode==='herebefore'){
+    const h=window.baseHist&&window.baseHist[sci];
+    if(!h||!h.comps) return false;
+    const cid=el('compartment').value.trim();
+    const cm=compMeta(cid);                       // resolve ID -> name
+    const names=[cid]; if(cm&&cm.name) names.push(cm.name);
+    return h.comps.some(c=>names.indexOf(c)>=0);  // strict: recorded in THIS compartment (by id or name)
+  }
+  if(filterMode==='earlier'){
+    const h=window.baseHist&&window.baseHist[sci];
+    if(!h||!h.lastDate) return false;
+    return h.lastDate < (new Date().getFullYear()+"-01-01");  // last seen before current year
+  }
+  return true;
+}
+
+function render(){
+  const q=(el('filter').value||"").toLowerCase().trim();
+  const tb=el('rows'); tb.innerHTML='';
+  let nRec=0,nFind=0,nNew=0,nNbl=0,nChk=0,nHere=0,nEarl=0;
+  const cidNow=el('compartment').value.trim();
+  const cmNow=compMeta(cidNow);
+  const hereNames=[cidNow]; if(cmNow&&cmNow.name) hereNames.push(cmNow.name);
+  const yrStart=(new Date().getFullYear()+"-01-01");
+  order.forEach(sci=>{
+    const st=state[sci];
+    const recorded = st.daf||st.la||st.check||st.lat!=null;
+    if(recorded) nRec++; else nFind++;
+    if(!baseSet.has(sci)) nNew++;
+    if(notableOf(sci)) nNbl++;
+    if(st.check) nChk++;
+    const h=window.baseHist&&window.baseHist[sci];
+    if(h&&h.comps&&h.comps.some(c=>hereNames.indexOf(c)>=0)) nHere++;
+    if(h&&h.lastDate&&h.lastDate<yrStart) nEarl++;
+    if(!rowMatches(sci,st,q)) return;
+    const com=comName(sci), pv=prevTag(sci);
+    const isNew=!baseSet.has(sci);
+    const warn=(st.la&&!st.daf)?'':''; // reserved
+    let cls=[]; if(isNew)cls.push('newrow');
+    let cells='';
+    DAF.forEach(d=>{cells+='<td class="cell"><div class="btn '+d+(st.daf===d?' on':'')+'" onclick="setDaf(\''+esc(sci)+'\',\''+d+'\')">'+d+'</div></td>';});
+    cells+='<td class="cell"><div class="btn la'+(st.la?' on':'')+'" onclick="toggleLa(\''+esc(sci)+'\')">LA</div></td>';
+    cells+='<td class="cell"><button class="notebtn'+((st.note||st.check||st.veg||st.lat!=null)?' has':'')+'" onclick="toggleDetail(this,\''+esc(sci)+'\')">⋯</button></td>';
+    const tr=document.createElement('tr');
+    if(cls.length)tr.className=cls.join(' ');
+    tr.innerHTML='<td class="sp"><div class="sci">'+he(sci)+'</div>'+(com?'<div class="com">'+he(com)+'</div>':'')+(pv?'<span class="prev">'+he(pv)+'</span>':'')+badges(sci,st)+'</td>'+cells;
+    tb.appendChild(tr);
+  });
+  setChip('all',order.length);setChip('tofind',nFind);setChip('recorded',nRec);setChip('new',nNew);setChip('notable',nNbl);setChip('check',nChk);setChip('herebefore',nHere);setChip('earlier',nEarl);
+  el('count').textContent=nRec+' recorded · '+nFind+' to find · '+nNew+' added · '+nNbl+' notable'+(surveyStart?(' · '+elapsedText()):'');
+  updateSafeAgo();
+}
+
+function setChip(mode,n){const c=document.querySelector('.chip[data-mode="'+mode+'"]');if(!c)return;const lbl={all:'All',tofind:'To find',recorded:'Recorded',new:'New',notable:'Notable',check:'Check ID',herebefore:'Here before',earlier:'Earlier yrs'}[mode];c.textContent=lbl+' ('+n+')';}
+function setMode(m,btn){filterMode=m;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));btn.classList.add('on');render();}
+function sortList(){order.sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));save();render();toast("Sorted A–Z");}
+
+/* ===================== DAFOR interactions ===================== */
+function setDaf(sci,d){markStart();const st=state[sci];st.daf=(st.daf===d)?null:d;save();render()}
+function toggleLa(sci){markStart();state[sci].la=!state[sci].la;save();render()}
+
+function toggleDetail(btn,sci){
+  const tr=btn.closest('tr');
+  if(tr.nextSibling&&tr.nextSibling.classList&&tr.nextSibling.classList.contains('noterow')){tr.nextSibling.remove();return;}
+  document.querySelectorAll('tr.noterow').forEach(r=>r.remove());
+  const st=state[sci];
+  const isAdded=!baseSet.has(sci);
+  const dr=document.createElement('tr');dr.className='noterow';
+  const td=document.createElement('td');td.colSpan=8;
+  td.innerHTML='<div class="dpanel">'
+    +'<textarea class="dnote" placeholder="Note for '+he(sci)+'…">'+he(st.note||'')+'</textarea>'
+    +'<div class="dctl">'
+    +'<button class="tgl'+(st.check?' on':'')+'" data-k="check">? Check ID</button>'
+    +'<button class="tgl'+(st.veg?' on':'')+'" data-k="veg">Not in flower/fruit</button>'
+    +'<button class="tgl'+(st.lat!=null?' on':'')+'" data-k="gps">'+(st.lat!=null?('📍 '+st.lat.toFixed(5)+', '+st.lon.toFixed(5)):'📍 Capture location')+'</button>'
+    +'</div>'
+    +'<div class="dctl">'
+    +(isAdded
+      ? '<button class="tgl del" data-k="del">🗑 Remove species</button>'
+      : '<button class="tgl clr" data-k="clr">⌫ Clear this record</button>')
+    +'</div></div>';
+  dr.appendChild(td);tr.after(dr);
+  const note=td.querySelector('.dnote');
+  note.addEventListener('input',()=>{st.note=note.value;save();btn.classList.add('has');});
+  td.querySelectorAll('.tgl').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.getAttribute('data-k');
+    if(k==='gps'){captureLoc(sci,b);return;}
+    if(k==='del'){ dr.remove(); delSpecies(sci); return; }
+    if(k==='clr'){ dr.remove(); clearRecord(sci); return; }
+    st[k]=!st[k];b.classList.toggle('on');save();render();
+  }));
+}
+
+function captureLoc(sci,b){
+  if(!navigator.geolocation){toast("No geolocation on this device");return;}
+  b.textContent="📍 …";
+  navigator.geolocation.getCurrentPosition(p=>{
+    state[sci].lat=p.coords.latitude;state[sci].lon=p.coords.longitude;save();
+    b.textContent='📍 '+p.coords.latitude.toFixed(5)+', '+p.coords.longitude.toFixed(5);
+    b.classList.add('on');render();toast("Location captured");
+  }, err=>{ b.textContent="📍 Capture location"; toast("Location failed: "+err.message); },
+  {enableHighAccuracy:true,timeout:15000,maximumAge:10000});
+}
+/* ===================== ADD SPECIES (synonym-aware + live notable) ===================== */
+function addFromBox(){
+  const raw=el('addbox').value.trim();
+  if(!raw){return;}
+  el('suggest').style.display='none';
+  const sci=resolveAccepted(raw);                 // CHANGE: resolve synonym -> accepted
+  const existing=order.find(s=>norm(s)===norm(sci));
+  if(existing){ toast(sci+" already in list"); el('addbox').value=''; flashRow(existing); return; }
+  if(raw!==sci){ toast('“'+raw+'” → '+sci); }      // tell the recorder we resolved a synonym
+  order.push(sci);
+  state[sci]=newRec();
+  if(!baseSet.has(sci)){
+    const pm=window.meta_byname[sci.toLowerCase()];
+    window.extraCom=window.extraCom||{}; window.extraCom[sci]=(pm&&pm.v)||comName(sci)||"";
+  }
+  // CHANGE: live notable flag for field-added species
+  const nb=notableOf(sci);
+  save(); render(); el('addbox').value='';
+  flashRow(sci);
+  if(nb){ toast("◆ "+sci+" — "+nb); }
+  else { toast("Added "+sci); }
+}
+function flashRow(sci){
+  // ensure visible then scroll to it
+  setTimeout(()=>{
+    const rows=[...document.querySelectorAll('#rows tr')];
+    const r=rows.find(tr=>tr.querySelector('.sci')&&tr.querySelector('.sci').textContent===sci);
+    if(r){ r.scrollIntoView({behavior:'smooth',block:'center'}); r.style.transition='background .1s'; const o=r.style.background; r.style.background='#fff6cc'; setTimeout(()=>r.style.background=o,900); }
+  },40);
+}
+
+/* ===================== RECORDS -> 24-COLUMN MASTER SCHEMA ===================== */
+const MASTER_COLS=["Taxon","Vernacular","Site","Compartment","compartment_as_recorded","recording_tier","Grid ref","Date","Recorder","Vice county","DAFOR / Abundance","Phenology","Check-ID","Lat","Lon","Status","Notes","scheme","record_context","survey_id","submitted_date","submission_ref","date_iso","QC flags"];
+
+function md5(str){ // tiny MD5 (for survey_id). Public-domain compact implementation.
+  function rh(n){let s='',j=0;for(;j<4;j++)s+=((n>>(j*8+4))&0x0F).toString(16)+((n>>(j*8))&0x0F).toString(16);return s}
+  function ad(x,y){const l=(x&0xFFFF)+(y&0xFFFF),m=(x>>16)+(y>>16)+(l>>16);return(m<<16)|(l&0xFFFF)}
+  function rl(n,c){return(n<<c)|(n>>>(32-c))}
+  function cm(q,a,b,x,s,t){return ad(rl(ad(ad(a,q),ad(x,t)),s),b)}
+  function ff(a,b,c,d,x,s,t){return cm((b&c)|((~b)&d),a,b,x,s,t)}
+  function gg(a,b,c,d,x,s,t){return cm((b&d)|(c&(~d)),a,b,x,s,t)}
+  function hh(a,b,c,d,x,s,t){return cm(b^c^d,a,b,x,s,t)}
+  function ii(a,b,c,d,x,s,t){return cm(c^(b|(~d)),a,b,x,s,t)}
+  function sb(str){const n=str.length,b=[];for(let i=0;i<n;i++)b[i>>2]|=str.charCodeAt(i)<<((i%4)*8);b[n>>2]|=0x80<<((n%4)*8);b[(((n+8)>>6)+1)*16-2]=n*8;return b}
+  let x=sb(unescape(encodeURIComponent(str))),a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+  for(let i=0;i<x.length;i+=16){const oa=a,ob=b,oc=c,od=d;
+    a=ff(a,b,c,d,x[i],7,-680876936);d=ff(d,a,b,c,x[i+1],12,-389564586);c=ff(c,d,a,b,x[i+2],17,606105819);b=ff(b,c,d,a,x[i+3],22,-1044525330);
+    a=ff(a,b,c,d,x[i+4],7,-176418897);d=ff(d,a,b,c,x[i+5],12,1200080426);c=ff(c,d,a,b,x[i+6],17,-1473231341);b=ff(b,c,d,a,x[i+7],22,-45705983);
+    a=ff(a,b,c,d,x[i+8],7,1770035416);d=ff(d,a,b,c,x[i+9],12,-1958414417);c=ff(c,d,a,b,x[i+10],17,-42063);b=ff(b,c,d,a,x[i+11],22,-1990404162);
+    a=ff(a,b,c,d,x[i+12],7,1804603682);d=ff(d,a,b,c,x[i+13],12,-40341101);c=ff(c,d,a,b,x[i+14],17,-1502002290);b=ff(b,c,d,a,x[i+15],22,1236535329);
+    a=gg(a,b,c,d,x[i+1],5,-165796510);d=gg(d,a,b,c,x[i+6],9,-1069501632);c=gg(c,d,a,b,x[i+11],14,643717713);b=gg(b,c,d,a,x[i],20,-373897302);
+    a=gg(a,b,c,d,x[i+5],5,-701558691);d=gg(d,a,b,c,x[i+10],9,38016083);c=gg(c,d,a,b,x[i+15],14,-660478335);b=gg(b,c,d,a,x[i+4],20,-405537848);
+    a=gg(a,b,c,d,x[i+9],5,568446438);d=gg(d,a,b,c,x[i+14],9,-1019803690);c=gg(c,d,a,b,x[i+3],14,-187363961);b=gg(b,c,d,a,x[i+8],20,1163531501);
+    a=gg(a,b,c,d,x[i+13],5,-1444681467);d=gg(d,a,b,c,x[i+2],9,-51403784);c=gg(c,d,a,b,x[i+7],14,1735328473);b=gg(b,c,d,a,x[i+12],20,-1926607734);
+    a=hh(a,b,c,d,x[i+5],4,-378558);d=hh(d,a,b,c,x[i+8],11,-2022574463);c=hh(c,d,a,b,x[i+11],16,1839030562);b=hh(b,c,d,a,x[i+14],23,-35309556);
+    a=hh(a,b,c,d,x[i+1],4,-1530992060);d=hh(d,a,b,c,x[i+4],11,1272893353);c=hh(c,d,a,b,x[i+7],16,-155497632);b=hh(b,c,d,a,x[i+10],23,-1094730640);
+    a=hh(a,b,c,d,x[i+13],4,681279174);d=hh(d,a,b,c,x[i],11,-358537222);c=hh(c,d,a,b,x[i+3],16,-722521979);b=hh(b,c,d,a,x[i+6],23,76029189);
+    a=hh(a,b,c,d,x[i+9],4,-640364487);d=hh(d,a,b,c,x[i+12],11,-421815835);c=hh(c,d,a,b,x[i+15],16,530742520);b=hh(b,c,d,a,x[i+2],23,-995338651);
+    a=ii(a,b,c,d,x[i],6,-198630844);d=ii(d,a,b,c,x[i+7],10,1126891415);c=ii(c,d,a,b,x[i+14],15,-1416354905);b=ii(b,c,d,a,x[i+5],21,-57434055);
+    a=ii(a,b,c,d,x[i+12],6,1700485571);d=ii(d,a,b,c,x[i+3],10,-1894986606);c=ii(c,d,a,b,x[i+10],15,-1051523);b=ii(b,c,d,a,x[i+1],21,-2054922799);
+    a=ii(a,b,c,d,x[i+8],6,1873313359);d=ii(d,a,b,c,x[i+15],10,-30611744);c=ii(c,d,a,b,x[i+6],15,-1560198380);b=ii(b,c,d,a,x[i+13],21,1309151649);
+    a=ii(a,b,c,d,x[i+4],6,-145523070);d=ii(d,a,b,c,x[i+11],10,-1120210379);c=ii(c,d,a,b,x[i+2],15,718787259);b=ii(b,c,d,a,x[i+9],21,-343485551);
+    a=ad(a,oa);b=ad(b,ob);c=ad(c,oc);d=ad(d,od);}
+  return rh(a)+rh(b)+rh(c)+rh(d);
+}
+
+function compMeta(cid){ return (PACK.compartments||[]).find(c=>c.id===cid)||{}; }
+function isoDate(dmy){ // input is yyyy-mm-dd from <input type=date>
+  return dmy||"";
+}
+function ddmmyyyy(iso){ if(!iso)return""; const p=iso.split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):iso; }
+
+function recordedRows(){
+  return order.filter(s=>state[s].daf||state[s].la||state[s].check||state[s].lat!=null)
+    .map(s=>({sci:s,...state[s]}));
+}
+
+function q(s){s=(s==null?"":String(s));return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+
+function buildMasterRows(){
+  const m=meta();
+  const cid=el('compartment').value.trim();
+  const cm=compMeta(cid);
+  const iso=el('date').value;
+  const dmy=ddmmyyyy(iso);
+  const recorder=m.recorder||"Luke Bristow";
+  const sid=md5([SITE,cid,iso,recorder].join('|')).slice(0,10);
+  const rows=[];
+  recordedRows().forEach(r=>{
+    const daf = (r.daf||"") + (r.la?(r.daf?"+LA":"LA"):"");
+    const phen = r.veg?"not in flower/fruit":"in flower/fruit";
+    const nb=notableOf(r.sci);
+    let notes=r.note||"";
+    if(nb) notes=(notes?notes+" | ":"")+nb;
+    rows.push([
+      r.sci,                       // Taxon
+      comName(r.sci),              // Vernacular
+      SITE,                        // Site
+      cid,                         // Compartment
+      cm.name||cid,                // compartment_as_recorded
+      cm.recording_tier||"compartment", // recording_tier
+      cm.grid_ref||"",             // Grid ref
+      dmy,                         // Date (DD/MM/YYYY)
+      recorder,                    // Recorder
+      m.vc||"",                    // Vice county
+      daf,                         // DAFOR / Abundance
+      phen,                        // Phenology
+      r.check?"CHECK":"",          // Check-ID
+      r.lat!=null?r.lat.toFixed(6):"", // Lat
+      r.lon!=null?r.lon.toFixed(6):"", // Lon
+      nativOf(r.sci)||"",          // Status (nativity)
+      notes,                       // Notes (note + notable)
+      m.scheme||"",                // scheme
+      "site_survey",               // record_context
+      sid,                         // survey_id
+      "",                          // submitted_date
+      "",                          // submission_ref
+      iso,                         // date_iso
+      ""                           // QC flags
+    ]);
+  });
+  return rows;
+}
+
+function buildCSVText(){
+  const rows=buildMasterRows();
+  if(!rows.length) return null;
+  let csv=MASTER_COLS.join(",")+"\n";
+  rows.forEach(r=>{ csv+=r.map(q).join(",")+"\n"; });
+  return csv;
+}
+function csvFilename(){ const m=meta(); return (SITE+" "+m.compartment+" "+m.date).replace(/[^\w]+/g,"_")+"_master.csv"; }
+
+function exportCSV(){
+  const csv=buildCSVText();
+  if(!csv){toast("No records yet");return;}
+  downloadFile(csv,csvFilename(),"text/csv;charset=utf-8");   // direct download
+  markSafe();
+}
+
+/* Share via the OS share sheet — lets you pick Save to Drive / AirDrop / email.
+   Deliberate, button-triggered, so it won't cause the duplicate "text" file that
+   came from auto-running share + download together. */
+async function shareCSV(){
+  const csv=buildCSVText();
+  if(!csv){toast("No records yet");return;}
+  const fn=csvFilename();
+  const blob=new Blob([csv],{type:"text/csv"});   // no BOM on share path — avoids iOS companion .txt
+  // Preferred: native file share (iOS shows Drive, AirDrop, Mail, etc.)
+  if(navigator.canShare){
+    try{
+      const f=new File([blob],fn,{type:"text/csv"});
+      if(navigator.canShare({files:[f]})){
+        await navigator.share({files:[f],title:fn});
+        toast("Shared "+fn);
+        markSafe();
+        return;
+      }
+    }catch(e){ if(e && e.name==='AbortError'){return;} /* user cancelled — do nothing */ }
+  }
+  // Fallback: no file-share support — download instead
+  downloadFile(csv,fn,"text/csv;charset=utf-8");
+  toast("Sharing unavailable — saved to Files instead");
+  markSafe();
+}
+
+/* ===================== GEOJSON (located records -> ArcGIS Pro) ===================== */
+/* Only records with a captured 📍 lat/lon become features. Properties mirror the
+   24-col master but with ArcGIS-safe field names (no spaces/punctuation). WGS84;
+   reproject to BNG EPSG:27700 in Pro on import. */
+const GEO_FIELDS=["Taxon","Vernacular","Site","Compartment","Compartment_as_recorded","Recording_tier","Grid_ref","Date","Recorder","Vice_county","DAFOR_Abundance","Phenology","Check_ID","Lat","Lon","Status","Notes","Scheme","Record_context","Survey_id","Submitted_date","Submission_ref","Date_iso","QC_flags"];
+
+function buildGeoJSON(){
+  const rows=buildMasterRows();
+  // Lat at index 13, Lon at index 14 in MASTER_COLS / row arrays
+  const feats=[];
+  rows.forEach(r=>{
+    const lat=parseFloat(r[13]), lon=parseFloat(r[14]);
+    if(!isFinite(lat)||!isFinite(lon)) return;          // skip records with no 📍 fix
+    const props={};
+    GEO_FIELDS.forEach((f,i)=>{ props[f]=r[i]; });
+    feats.push({type:"Feature",geometry:{type:"Point",coordinates:[lon,lat]},properties:props});
+  });
+  if(!feats.length) return null;
+  return JSON.stringify({type:"FeatureCollection",
+    name:(SITE+"_"+el('compartment').value.trim()+"_points").replace(/[^\w]+/g,"_"),
+    crs:{type:"name",properties:{name:"urn:ogc:def:crs:OGC:1.3:CRS84"}},  // WGS84 lon/lat
+    features:feats},null,2);
+}
+function geojsonFilename(){ const m=meta(); return (SITE+" "+m.compartment+" "+m.date).replace(/[^\w]+/g,"_")+"_points.geojson"; }
+
+function exportGeoJSON(){
+  const gj=buildGeoJSON();
+  if(!gj){toast("No located records — tap 📍 on a record first");return;}
+  downloadFile(gj,geojsonFilename(),"application/geo+json");
+}
+async function shareGeoJSON(){
+  const gj=buildGeoJSON();
+  if(!gj){toast("No located records — tap 📍 on a record first");return;}
+  const fn=geojsonFilename();
+  if(navigator.canShare){
+    try{
+      const f=new File([gj],fn,{type:"application/geo+json"});
+      if(navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:fn}); toast("Shared "+fn); return; }
+    }catch(e){ if(e&&e.name==='AbortError'){return;} }
+  }
+  downloadFile(gj,fn,"application/geo+json");
+}
+
+/* Direct download with explicit filename. Used for CSV so iOS keeps the .csv name.
+   BOM added so Excel reads UTF-8. */
+function downloadFile(text,filename,mime){
+  try{
+    const b=new Blob(["\ufeff"+text],{type:mime});
+    const u=URL.createObjectURL(b);
+    const a=document.createElement('a');
+    a.href=u; a.download=filename; a.rel="noopener";
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},800);
+    toast("Saved "+filename);
+  }catch(e){ showText(text); }
+}
+
+/* ===================== FINISH / SUMMARY / BACKUP ===================== */
+function elapsedText(){if(!surveyStart)return "";const end=surveyEnd||Date.now();return fmtElapsed(end-surveyStart);}
+function fmtElapsed(ms){const mins=Math.round(ms/60000);const h=Math.floor(mins/60),mm=mins%60;return (h?h+"h ":"")+mm+"m";}
+function toggleCompNotes(){const w=el('cnotewrap');const show=(w.style.display==='none'||!w.style.display);w.style.display=show?'block':'none';if(show)el('compnotes').focus();}
+function toggleKey(){const p=el('keypanel'),b=el('keytoggle');const show=!p.classList.contains('show');p.classList.toggle('show',show);b.classList.toggle('on',show);b.setAttribute('aria-expanded',show?'true':'false');}
+
+function finishSurvey(){
+  if(!surveyEnd){surveyEnd=Date.now();save();}
+  const rows=recordedRows();
+  const nbl=rows.filter(r=>notableOf(r.sci));
+  el('fcomp').textContent=el('compartment').value||"—";
+  el('fbody').innerHTML=
+    '<b>'+rows.length+'</b> taxa recorded · <b>'+nbl.length+'</b> notable<br>'
+    +'Duration: <b>'+(elapsedText()||'—')+'</b><br>'
+    +(nbl.length?('<div style="margin-top:8px">◆ '+nbl.map(r=>he(r.sci)).join('<br>◆ ')+'</div>'):'')
+    +'<div style="margin-top:10px;color:#5a4a00">📍 Stop route recording in the OS Maps app, then Export GPX for the traverse line.</div>';
+  el('finishmodal').style.display='flex';
+}
+
+function copySummary(){
+  const rows=recordedRows();
+  let t=SITE+" — "+el('compartment').value+" — "+el('date').value+"  ("+el('recorder').value+")\n\n";
+  rows.forEach(r=>{t+=r.sci+(comName(r.sci)?" ("+comName(r.sci)+")":"")+": "+(r.daf||"")+(r.la?(r.daf?"+LA":"LA"):"")+(r.check?" [CHECK ID]":"")+(notableOf(r.sci)?" ["+notableOf(r.sci)+"]":"")+(r.note?"  ("+r.note+")":"")+"\n"});
+  if(el('compnotes').value)t+="\nNotes: "+el('compnotes').value+"\n";
+  if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>toast("Summary copied"),()=>fallbackCopy(t));}else{fallbackCopy(t);}
+}
+function fallbackCopy(t){try{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('Summary copied')}catch(e){showText(t)}}
+function backup(){const m=meta();downloadFile(JSON.stringify({pack_site:SITE,meta:m,records:state,order:order,compnotes:el('compnotes').value,start:surveyStart,end:surveyEnd,extras:order.filter(s=>!baseSet.has(s)).map(s=>({sci:s,com:comName(s)}))},null,2),(SITE+" "+m.compartment+" "+m.date+" backup").replace(/[^\w]+/g,"_")+".json","application/json");markSafe();}
+
+function restoreBackup(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    let b;
+    try{b=JSON.parse(r.result);}catch(e){alert("Restore failed — file isn't valid JSON.\n\n"+e.message);return;}
+    if(!(b&&b.records&&b.order)){alert("That file isn't a DAFOR backup (expected records / order).\n\nSite packs load on the start screen, not here.");return;}
+    if(el('app').style.display==='none'||!SITE){alert("Load the site pack first (Resume or import it on the start screen), then Restore.");return;}
+    if(b.pack_site&&SITE&&b.pack_site!==SITE&&!confirm("This backup is for \u201c"+b.pack_site+"\u201d but the loaded pack is \u201c"+SITE+"\u201d.\n\nRestore anyway?"))return;
+    const m=b.meta||{};
+    const comp=(m.compartment&&m.compartment!=="—")?m.compartment:el('compartment').value;
+    if(!confirm("Restore backup for compartment \u201c"+(comp||"—")+"\u201d?\n\nThis replaces that compartment's records on this device."))return;
+    if(m.date)el('date').value=m.date;
+    if(m.recorder)el('recorder').value=m.recorder;
+    if(comp)el('compartment').value=comp;
+    if(m.weather!=null)el('weather').value=m.weather;
+    const saved={records:b.records,order:b.order,start:b.start||null,end:b.end||null,compnotes:b.compnotes||"",weather:(m.weather||el('weather').value||""),extras:b.extras||[]};
+    try{localStorage.setItem(key(),JSON.stringify(saved));}catch(e){}
+    load();
+    toast("Restored "+(comp||""));
+  };
+  r.onerror=()=>alert("Could not read the file.");
+  r.readAsText(file);
+}
+
+/* ===================== "saved to a file" nudge ===================== */
+let lastSafe=null; try{lastSafe=parseInt(localStorage.getItem("dafor::lastsafe"))||null;}catch(e){}
+function markSafe(){lastSafe=Date.now();try{localStorage.setItem("dafor::lastsafe",String(lastSafe));}catch(e){}updateSafeAgo();}
+function updateSafeAgo(){const e=el('savedAgo');if(!e)return;
+  const has=order&&order.some(s=>{const st=state[s]||{};return st.daf||st.la||st.check||st.lat!=null;});
+  if(!has){e.style.display='none';return;}
+  e.style.display='block';
+  if(!lastSafe){e.style.background='#fdecea';e.style.color='#b00';e.textContent='⚠ Not yet saved to a file — Export or Backup';return;}
+  const mins=Math.round((Date.now()-lastSafe)/60000);
+  if(mins>=60){e.style.background='#fdecea';e.style.color='#b00';e.textContent='⚠ No file save for '+Math.floor(mins/60)+'h '+(mins%60)+'m — Export or Backup';}
+  else{e.style.background='#eaf5ea';e.style.color='#2e7d32';e.textContent='✓ Last saved to file '+(mins<1?'just now':mins+'m ago');}
+}
+setInterval(updateSafeAgo,30000);
+
+/* ===================== MODALS / SHARE ===================== */
+function confirmModal(msg,onYes){el('modalmsg').textContent=msg;const m=el('modal');m.style.display='flex';
+  const y=el('modalyes'),n=el('modalno');const done=()=>{m.style.display='none';y.onclick=null;n.onclick=null;};
+  y.onclick=()=>{done();onYes();};n.onclick=done;}
+function doDelSpecies(sci){order=order.filter(s=>s!==sci);delete state[sci];if(window.extraCom)delete window.extraCom[sci];save();render();toast("Removed "+sci);}
+function delSpecies(sci){
+  const st=state[sci]||{};
+  const hasData = st.daf||st.la||st.check||st.veg||st.lat!=null||(st.note&&st.note.trim());
+  if(hasData){ confirmModal("Remove added species “"+sci+"” and its record from all compartments?",()=>doDelSpecies(sci)); }
+  else { doDelSpecies(sci); }   // mistyped add with nothing recorded — remove straight away
+}
+function clearRecord(sci){ state[sci]=newRec(); save(); render(); toast("Cleared "+sci); }
+function resetAll(){confirmModal("Clear all DAFOR entries for "+(el('compartment').value||"")+"? (Species list stays; added species remain.)",
+  ()=>{order.forEach(s=>state[s]=newRec());surveyStart=null;surveyEnd=null;save();render();toast("Cleared");});}
+function showText(t){el('textarea').value=t;el('textmodal').style.display='flex';}
+function selAll(){const a=el('textarea');a.focus();a.select();try{a.setSelectionRange(0,a.value.length)}catch(e){}}
+
+/* ===================== ADD-BOX SUGGEST (drop-up) ===================== */
+function renderSuggest(){
+  const box=el('suggest');const v=el('addbox').value.trim().toLowerCase();
+  if(v.length<2){box.style.display='none';return;}
+  const out=[];
+  for(let i=0;i<PICK.length&&out.length<40;i++){
+    const p=PICK[i];const n=p.n.toLowerCase();
+    if(n.includes(v)||(p.v&&p.v.toLowerCase().includes(v))){
+      const acc=SYN[p.n]; // if this pick name is a synonym, show its accepted target
+      out.push({n:p.n,v:p.v,syn:acc&&acc!==p.n?acc:""});
+    }
+  }
+  if(!out.length){box.style.display='none';return;}
+  box.innerHTML=out.map(p=>'<div class="s" data-n="'+ae(p.n)+'"><i>'+he(p.n)+'</i>'+(p.v?'<span class="v">'+he(p.v)+'</span>':'')+(p.syn?'<span class="syn">→ '+he(p.syn)+'</span>':'')+'</div>').join('');
+  positionSuggest();box.style.display='block';
+}
+function positionSuggest(){const box=el('suggest');const r=el('addbox').getBoundingClientRect();
+  const below=window.innerHeight-r.bottom; if(below<240)box.classList.add('up');else box.classList.remove('up');}
+
+/* ===================== WIRING ===================== */
+window.addEventListener('DOMContentLoaded',()=>{
+  showResumeInfo();
+  el('pickfile').addEventListener('change',e=>{ if(e.target.files&&e.target.files[0]) readPackFile(e.target.files[0]); });
+  el('compartment').addEventListener('change',()=>{load();toast("Compartment: "+(el('compartment').value||"—"))});
+  // durability: force-save the instant the app is backgrounded / pocketed
+  function _daforFlush(){try{save();}catch(e){}}
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)_daforFlush();});
+  window.addEventListener("pagehide",_daforFlush);
+  window.addEventListener("beforeunload",_daforFlush);
+  ['recorder','weather','date'].forEach(id=>el(id).addEventListener('change',save));
+  el('filter').addEventListener('input',render);
+  el('addbox').addEventListener('input',renderSuggest);
+  el('addbox').addEventListener('keydown',e=>{if(e.key==='Enter')addFromBox()});
+  el('suggest').addEventListener('click',e=>{const d=e.target.closest('[data-n]');if(!d)return;el('addbox').value=d.getAttribute('data-n');el('suggest').style.display='none';addFromBox();});
+});
+</script>
+</body>
+</html>

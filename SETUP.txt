@@ -1,0 +1,28 @@
+ESSEX BOTANY FORMS — single Home-Screen launcher (PWA)
+======================================================
+
+FILES IN THIS ZIP (all go in the repo ROOT, no subfolders):
+  index.html            launcher (3 buttons: DAFOR / NVC / Monad)
+  manifest.webmanifest  app name + icons
+  sw.js                 service worker (offline caching)
+  icon-180.png          Home-Screen icon (iOS)
+  icon-512.png          app icon (manifest)
+  dafor.html            DAFOR importer v13.2 (hardened)
+  nvc.html              NVC form v1.9 (hardened)
+  monad.html            TL8507 monad presence app (hardened)
+
+All three forms: autosave on edit + force-save when backgrounded/pocketed
++ "Restored ..." banner on reopen. DAFOR & NVC keep their JSON Backup/Restore.
+
+HOST IT (free) — GitHub Pages
+  1. New PUBLIC repo, e.g. "botany-forms".
+  2. Add file > Upload files > drag in all 8 files > Commit (index.html at root).
+  3. Settings > Pages > Source = Deploy from a branch; Branch = main, / (root); Save.
+  4. Wait ~1 min: https://<your-username>.github.io/botany-forms/
+
+HOME SCREEN
+  5. Open the URL in Safari > Share > Add to Home Screen.
+  6. Open it once WITH signal so it caches for offline.
+
+UPDATING A FORM
+  Replace the file in the repo AND bump CACHE in sw.js ('botany-v1'->'botany-v2').

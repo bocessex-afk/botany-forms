@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>NVC Survey — Field Capture v1</title>
+<style>
+  :root{--blue:#2f6b3d;--green:#e8f1dc;--grey:#e7ece8;--line:#cdd6cf;--ink:#1b2a23;--muted:#5d6b62;--head:#1f3b2c;--bg:#f4f7f4;--sec:#cfe3d4;--secink:#13361f;--la:#f4b400;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg);-webkit-text-size-adjust:100%}
+  header{position:sticky;top:0;z-index:5;background:var(--head);color:#fff;padding:10px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  header h1{font-size:16px;margin:0;font-weight:700;flex:1}
+  header .sv{font-size:12px;opacity:.85}
+  main{padding:10px 10px 80px;max-width:760px;margin:0 auto}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden}
+  .card>.hd{background:#eef3ee;padding:9px 12px;font-weight:700;display:flex;align-items:center;gap:8px;cursor:pointer}
+  .card>.hd .sub{font-weight:400;color:var(--muted);font-size:13px}
+  .card>.bd{padding:10px 12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+  .row>label{flex:1 1 140px;min-width:0;display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+  .row>label.full{flex-basis:100%}
+  input,select,textarea,button{font:inherit;color:var(--ink)}
+  input,select,textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  textarea{min-height:46px;resize:vertical}
+  button{cursor:pointer;border:none;background:var(--blue);color:#fff;border-radius:8px;padding:10px 12px;font-weight:600}
+  button.sec{background:var(--sec);color:var(--secink)}
+  button.lt{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:500}
+  button.sm{padding:6px 9px;font-size:13px}
+  button.del{background:#fbe9e6;color:#a12;border:1px solid #f0cfc8}
+  .toggle{margin-left:auto;font-size:12px;color:var(--blue);font-weight:600}
+  .detail{display:none}
+  .detail.open{display:block}
+  .quad{border:1px solid var(--line);border-radius:10px;margin:8px 0}
+  .quad .qhd{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#eef3ee;border-radius:10px 10px 0 0}
+  .quad .qhd b{flex:1}
+  .qbody{padding:8px 10px}
+  .sp{display:flex;gap:6px;align-items:center;padding:6px 0;border-top:1px dashed var(--line)}
+  .sp .nm{flex:1;font-size:14px}
+  .sp .nm small{color:var(--muted)}
+  .sp select{width:auto;min-width:64px;padding:6px}
+  .pill{display:inline-block;background:var(--grey);border-radius:20px;padding:2px 9px;font-size:12px;margin:2px 4px 2px 0}
+  .pill.on{background:var(--blue);color:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;max-height:46vh;overflow:auto}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:18px;padding:6px 11px;font-size:13px;cursor:pointer;user-select:none}
+  .chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .chip.notable{border-color:#caa300;box-shadow:inset 0 0 0 1px #f0c674}
+  .chip.on.notable{background:#7a5b00;border-color:#7a5b00}
+  .chip small{opacity:.8}
+  .addsp{display:flex;gap:6px;margin-top:8px}
+  .addsp input{flex:1}
+  .warn{background:#fff7e6;border:1px solid #f0c674;color:#7a5b00;padding:8px 10px;border-radius:8px;font-size:13px;margin:8px 0}
+  .footbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;gap:8px;padding:8px;z-index:6}
+  .footbar button{flex:1}
+  .ref table{border-collapse:collapse;width:100%;font-size:13px}
+  .ref td{border:1px solid var(--line);padding:4px 6px;text-align:center}
+  datalist{position:absolute}
+  .muted{color:var(--muted);font-size:12px}
+  .count{font-size:12px;color:var(--muted);margin-left:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>NVC Survey <span class="sv">v1.10</span></h1>
+  <div class="sv" id="hdrStatus">—</div>
+  <button id="btnHelp" class="lt sm" style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.4)">ⓘ Help</button>
+</header>
+<div id="savedAgo" style="display:none;padding:6px 12px;font-size:12px;text-align:center;border-bottom:1px solid var(--line)"></div>
+<div id="helpPanel" style="display:none;position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.45);padding:18px;overflow:auto">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.3)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:17px;flex:1">NVC Survey — quick help</b><button id="btnHelpClose" class="sec sm">Close</button></div>
+    <p style="font-size:13px;color:#5d6b62;margin:.3em 0 1em">Tap any item below for what it does. Order of a survey: <b>import pack → set date &amp; compartment → add a stand → walk it (What's present) → add quadrats → score Domin → Backup/Export.</b></p>
+    <div id="helpBody" style="font-size:13.5px;line-height:1.5"></div>
+  </div>
+</div>
+<main>
+
+  <!-- SURVEY -->
+  <div class="card">
+    <div class="hd" data-toggle="svBody">Survey details <span class="toggle">show/hide</span></div>
+    <div class="bd" id="svBody">
+      <div class="row">
+        <label>Site<input id="f_site" placeholder="from pack or type" title="Set automatically from the imported site pack"></label>
+        <label>Compartment<select id="f_comp" title="Pick a compartment from the pack"><option value="">— select —</option></select></label>
+      </div>
+      <div class="row">
+        <label>Vice county<input id="f_vc" placeholder="set from pack" title="Filled from the site pack's vice-county"></label>
+        <label>Surveyor<input id="f_surv" value="Luke Bristow"></label>
+      </div>
+      <div class="row">
+        <label>Project / commission ref<input id="f_proj" placeholder="e.g. AG…"></label>
+        <label>Habitat type<select id="f_target">
+          <option>Aquatic</option><option>Fen</option><option>Grassland</option><option>Heathland</option><option>Maritime</option><option>Mires</option><option>Open Habitats</option><option>Scrub</option><option>Swamp</option><option>Woodland</option>
+        </select></label>
+      </div>
+      <div class="row"><label class="full">Survey notes<textarea id="f_notes"></textarea></label></div>
+      <div class="muted">Dates are recorded per stand (auto-stamped, editable) — a survey can run over several days.</div>
+      <div class="row" style="gap:6px">
+        <button class="lt sm" id="btnImport" title="Load a site pack (JSON): seeds the species pool, notable flags, site name and compartments">Import species pack (JSON)</button>
+        <input type="file" id="packFile" accept="application/json,text/plain,.json" style="display:none">
+        <button class="lt sm" id="btnRestore" title="Reload a previously saved full-survey JSON backup (replaces the current survey)">⤒ Restore from backup</button>
+        <input type="file" id="restoreFile" accept="application/json,text/plain,.json" style="display:none">
+        <span class="muted" id="packStatus">no pack — free entry</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STANDS -->
+  <div class="card">
+    <div class="hd" data-toggle="standsBody">Stands <span class="sub">walk each stand for what's present</span> <span class="toggle">show/hide</span></div>
+    <div class="bd" id="standsBody">
+      <div id="standList"></div>
+      <button class="sec sm" id="btnAddStand" title="Add a stand — a homogeneous vegetation patch holding ~5 quadrats">+ Add stand</button>
+    </div>
+  </div>
+
+  <!-- QUADRATS -->
+  <div class="card">
+    <div class="hd">Quadrats <span class="sub" id="qCount"></span></div>
+    <div class="bd">
+      <div id="quadList"></div>
+      <button id="btnAddQuad" title="Add a quadrat to the last stand (starts with that stand's first quadrat species)">+ Add quadrat</button>
+    </div>
+  </div>
+
+  <!-- DOMIN REFERENCE -->
+  <div class="card ref">
+    <div class="hd" data-toggle="dominRef">Domin scale (reference) <span class="toggle">show/hide</span></div>
+    <div class="bd detail" id="dominRef">
+      <table><tbody>
+        <tr><td>10</td><td>91–100%</td><td>5</td><td>11–25%</td></tr>
+        <tr><td>9</td><td>76–90%</td><td>4</td><td>4–10%</td></tr>
+        <tr><td>8</td><td>51–75%</td><td>3</td><td>&lt;4% many</td></tr>
+        <tr><td>7</td><td>34–50%</td><td>2</td><td>&lt;4% several</td></tr>
+        <tr><td>6</td><td>26–33%</td><td>1</td><td>&lt;4% few</td></tr>
+      </tbody></table>
+      <p class="muted">NVC Domin (Rodwell 2006). RMAVIS ingests Domin directly — select cover scale "Domin" on import.</p>
+    </div>
+  </div>
+
+  <div id="exportWarn"></div>
+</main>
+
+<datalist id="presentList"></datalist>
+
+<datalist id="allList"></datalist>
+
+<div class="footbar">
+  <button class="sec" id="btnMaster" title="Download the 24-column master CSV for the records database (scored species only)">⬇ Master</button>
+  <button id="btnRmavis" title="Download the RMAVIS CSV (Year, Group, Quadrat, Species, Cover=Domin) for community analysis">⬇ RMAVIS</button>
+  <button class="lt" id="btnBackup" title="Save the entire survey to a JSON file — a lossless recovery point you can keep or move to another phone">💾 Backup</button>
+  <button class="lt" id="btnReset" title="Clear everything and start a new survey — export or back up first">⟲ New</button>
+</div>
+
+<script>
+"use strict";
+// ---------- constants ----------
+const SIZES=["1 × 1 m","2 × 2 m","4 × 4 m","10 × 10 m","50 × 50 m (woodland canopy)","4 × 4 m (nested field layer)","rectangular (hedge)","free / other"];
+const DOMIN=[["",""],["10","91–100%"],["9","76–90%"],["8","51–75%"],["7","34–50%"],["6","26–33%"],["5","11–25%"],["4","4–10%"],["3","<4% many"],["2","<4% several"],["1","<4% few"]];
+const DOMIN_MID={"10":95,"9":83,"8":63,"7":42,"6":29.5,"5":18,"4":7,"3":2,"2":1.5,"1":1};
+const COVER_WARN=250; // % — soft sanity threshold for summed Domin cover (tunable)
+function estCover(q){return Math.round((q.species||[]).reduce((s,sp)=>s+(DOMIN_MID[sp.domin]||0),0));}
+const LAYERS=["","canopy","shrub","field","ground"];
+const STRATA={canopy:"(c)",shrub:"(s)",ground:"(g)"}; // RMAVIS strata suffixes; field layer = no suffix
+// verified master->RMAVIS/UKSI name-map (2026-06-23)
+const NAMEMAP={"Aphanes arvensis s.s.":"Aphanes arvensis","Arenaria serpyllifolia s.s.":"Arenaria serpyllifolia","Centaurea nigra s.l.":"Centaurea nigra","Erophila verna s.s.":"Erophila verna","Hedera helix s.l.":"Hedera helix","Juncus bufonius s.s.":"Juncus bufonius","Lysimachia arvensis s.l.":"Lysimachia arvensis","Malus sylvestris s.l.":"Malus sylvestris","Ornithogalum umbellatum s.l.":"Ornithogalum umbellatum","Poa pratensis s.l.":"Poa pratensis","Rosa canina s.s.":"Rosa canina","Anagallis arvensis":"Lysimachia arvensis","Chamerion angustifolium":"Chamaenerion angustifolium","Elytrigia repens":"Elymus repens","Senecio erucifolius":"Jacobaea erucifolia","Senecio jacobaea":"Jacobaea vulgaris","Vicia tetrasperma":"Ervum tetraspermum","Vicia hirsuta":"Ervilia hirsuta","Lotus glaber":"Lotus tenuis","Rubus fruticosus":"Rubus fruticosus agg.","Polygonum arenastrum":"Polygonum aviculare agg.","Polygonum aviculare":"Polygonum aviculare agg.","Hypericum perforatum":"Hypericum perforatum sensu Stace","Salix fragilis s.l.":"Salix fragilis sens. lat.","Centaurea nigra agg.":"Centaurea nigra sens. lat.","Galium mollugo subsp. mollugo":"Galium album","Carex muricata subsp.pairae":"Carex muricata subsp. pairae"};
+// taxa RMAVIS cannot match (genus-only / aggregate without concept / errors) -> warn, exclude from RMAVIS export
+const RMAVIS_RESIDUAL=new Set(["Taraxacum officinale agg.","Nigra"]);
+function rankFlag(t){t=(t||"").trim();if(/\bagg\./.test(t))return"aggregate";if(/ sp\.$/.test(t)||/\bspp\./.test(t))return"genus-only";if(/\bsubsp\.|\bssp\./.test(t))return"subspecies";if(/\bvar\./.test(t))return"variety";return"";}
+function rmavisName(t){if(NAMEMAP[t])return NAMEMAP[t];return t;}
+function rmavisOK(t){const f=rankFlag(t);if(f==="genus-only")return false;if(RMAVIS_RESIDUAL.has(t))return false;return true;}
+
+// ---------- state ----------
+const KEY="nvc_survey_v1";
+let S=load()||{survey:{surveyor:"Luke Bristow"},stands:[],quads:[],present:[],pack:null};
+if(!S.present)S.present=[];
+let taxaPool=new Set();
+function load(){try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));status("saved");}catch(e){status("save failed");}}
+function status(t){document.getElementById("hdrStatus").textContent=t+" · "+S.quads.length+"q";}
+const uid=()=>Math.random().toString(36).slice(2,8);
+const today=()=>new Date().toISOString().slice(0,10);
+
+// ---------- species pool model ----------
+let pack={site:"",vice_county:"",sitePool:[],allTaxa:[],synonyms:{},notable:{},compartments:[]};
+function loadPack(p){if(!p)return;
+  pack.site=p.site||"";
+  pack.vice_county=p.vice_county||p.vc||"";
+  // species pool: NVC 'sitePool' [{name,notable}] OR DAFOR 'baseline' [{taxon,...}]
+  if(p.sitePool&&p.sitePool.length){pack.sitePool=p.sitePool;}
+  else if(p.baseline&&p.baseline.length){pack.sitePool=p.baseline.map(b=>({name:(b.taxon||b.name||b.sci||""),notable:(b.notable||"")}));}
+  else{pack.sitePool=[];}
+  // wider add-list: NVC 'allTaxa' OR DAFOR 'pick' (pick may be strings or {n,v} objects)
+  let wider=p.allTaxa||p.pick||p.taxa||p.species||[];
+  pack.allTaxa=wider.map(x=>typeof x==="string"?x:(x.n||x.name||x.taxon||"")).filter(Boolean);
+  pack.synonyms=p.synonyms||p.synonym_map||{};
+  pack.notable=Object.assign({},p.notable||p.notable_lookup||{});
+  pack.compartments=p.compartments||[];
+  pack.sitePool.forEach(e=>{if(e&&typeof e==="object"&&e.notable)pack.notable[e.name]=e.notable;});
+}
+function applyPackHeader(){
+  const fs=document.getElementById("f_site");
+  if(pack&&pack.site){if(fs){fs.value=pack.site;fs.readOnly=true;}S.survey.site=pack.site;}
+  else if(fs){fs.readOnly=false;}
+  if(pack&&pack.vice_county){const vc=document.getElementById("f_vc");if(vc){vc.value=pack.vice_county;S.survey.vc=pack.vice_county;}}
+  populateCompartments();
+}
+function populateCompartments(){
+  const sel=document.getElementById("f_comp");if(!sel)return;
+  const comps=(pack.compartments||[]).map(c=>typeof c==="string"?c:c.name);
+  const cur=S.survey.comp||"";
+  let html='<option value="">— select —</option>';
+  comps.forEach(n=>{html+='<option'+(n===cur?' selected':'')+'>'+esc(n)+'</option>';});
+  if(cur&&!comps.includes(cur))html+='<option selected>'+esc(cur)+'</option>';
+  html+='<option value="__other__">Other (type)…</option>';
+  sel.innerHTML=html;
+}
+function poolNames(){return pack.sitePool.map(e=>typeof e==="string"?e:e.name);}
+function resolveSyn(n){return pack.synonyms[n]||n;}
+function notableOf(n){return pack.notable[n]||"";}
+function presentOf(st){return (st&&st.present)||[];}
+function markPresent(st,n){st.present=st.present||[];if(!st.present.includes(n))st.present.push(n);}
+function unmarkPresent(st,n){st.present=(st.present||[]).filter(x=>x!==n);}
+function isWoodland(){return (S.survey.target||"Grassland")==="Woodland";}
+
+// ---------- survey fields ----------
+const SF={f_site:"site",f_vc:"vc",f_surv:"surveyor",f_proj:"proj",f_target:"target",f_notes:"notes"};
+Object.entries(SF).forEach(([id,k])=>{const el=document.getElementById(id);if(S.survey[k]!=null)el.value=S.survey[k];el.addEventListener("input",()=>{S.survey[k]=el.value;save();});});
+document.getElementById("f_target").addEventListener("change",()=>{S.survey.target=document.getElementById("f_target").value;save();renderQuads();});
+document.getElementById("f_comp").addEventListener("change",function(){
+  if(this.value==="__other__"){const v=(prompt("Compartment name:")||"").trim();if(v)S.survey.comp=v;populateCompartments();}
+  else{S.survey.comp=this.value;}
+  save();
+});
+// help panel (tap-help; iOS has no hover)
+const HELP=[
+ ["Import species pack","Loads a site pack (JSON): species pool, notable flags, site name and the compartment list."],
+ ["⤒ Restore from backup","Reloads a full-survey JSON backup, replacing the current survey on this device."],
+ ["+ Add stand","A stand is one homogeneous vegetation patch (~5 quadrats). Walk each separately."],
+ ["What's present","Per stand: tap the species you find. These become that stand's quadrat picker list."],
+ ["+ Add quadrat","New quadrats start with the stand's first-quadrat species, Domin blank — just score what's there."],
+ ["▾ present / all","Switches the quadrat picker between this stand's present list and the full site + BSBI list."],
+ ["⤓ Load present list","Pre-loads the stand's present species into a quadrat (unscored species are skipped on export)."],
+ ["📍 GPS","Captures GPS and fills the 8-figure grid ref for the quadrat."],
+ ["⬇ Master","24-column master CSV for the records database (scored species only)."],
+ ["⬇ RMAVIS","RMAVIS CSV — Year, Group (stand), Quadrat, Species, Cover = Domin."],
+ ["💾 Backup","Saves the entire survey to JSON — a lossless recovery point you can keep or move to another device."],
+ ["⟲ New","Clears everything for a new survey. Export or back up first."],
+];
+function showHelp(){document.getElementById("helpBody").innerHTML=HELP.map(function(x){return '<div style="padding:6px 0;border-bottom:1px solid #eef3ee"><b>'+esc(x[0])+'</b><br><span style="color:#5d6b62">'+esc(x[1])+'</span></div>';}).join("");document.getElementById("helpPanel").style.display="block";}
+document.getElementById("btnHelp").onclick=showHelp;
+document.getElementById("btnHelpClose").onclick=function(){document.getElementById("helpPanel").style.display="none";};
+document.getElementById("helpPanel").onclick=function(e){if(e.target.id==="helpPanel")e.target.style.display="none";};
+
+// collapse toggles
+document.querySelectorAll("[data-toggle]").forEach(h=>h.addEventListener("click",()=>{const el=document.getElementById(h.dataset.toggle);el.classList.toggle("open");if(el.classList.contains("detail")){}else{el.style.display=el.style.display==="none"?"":"none";}}));
+
+// ---------- pack import ----------
+document.getElementById("btnImport").onclick=()=>document.getElementById("packFile").click();
+document.getElementById("packFile").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    let p;
+    try{p=JSON.parse(r.result);}catch(err){alert("Import failed — file isn't valid JSON.\n\n"+err.message);return;}
+    if(!(p.sitePool||p.allTaxa||p.taxa||p.species||p.baseline||p.pick)){alert("Import failed — this JSON isn't a site pack (no species list).");return;}
+    S.pack=p;loadPack(p);applyPackHeader();
+    if(!S.stands.length)S.stands.push({id:"A",date:today(),desc:"",provComm:"",notes:"",present:[]});
+    refreshTaxa();renderStands();renderQuads();
+    document.getElementById("packStatus").textContent="pack: "+(p.site||"loaded")+" ("+poolNames().length+" site · "+pack.allTaxa.length+" wider)";
+    save();
+    openStandWalk(S.stands[0]);
+    alert("Pack loaded: "+(p.site||"")+"\n"+poolNames().length+" site species · "+pack.allTaxa.length+" wider.\n\nOpened stand "+S.stands[0].id+" — tick what's present.");
+  };
+  r.onerror=()=>alert("Could not read the file.");
+  r.readAsText(f);
+  e.target.value="";
+};
+function openStandWalk(st){if(!st)return;const wp=document.getElementById("walk_"+st.id),wt=document.querySelector(`[data-walk="${st.id}"]`);if(wp){wp.classList.add("open");if(wt)wt.textContent=`▾ What's present in stand ${st.id} (${(st.present||[]).length})`;renderStandWalk(st);}}
+
+function refreshTaxa(){
+  const al=document.getElementById("allList");al.innerHTML="";
+  const present=[].concat(...S.stands.map(s=>s.present||[]));
+  const all=new Set([...poolNames(),...pack.allTaxa,...present]);
+  [...all].sort().forEach(t=>{const o=document.createElement("option");o.value=t;al.appendChild(o);});
+}
+function setPresentList(st){const pl=document.getElementById("presentList");pl.innerHTML="";presentOf(st).slice().sort().forEach(t=>{const o=document.createElement("option");o.value=t;pl.appendChild(o);});}
+
+// ---------- per-stand site walk ----------
+function renderStandWalk(st){
+  const box=document.getElementById("pool_"+st.id);if(!box)return;
+  const pres=new Set(st.present||[]);
+  const fEl=document.querySelector(`[data-walkfilter="${st.id}"]`);const filter=(fEl?fEl.value:"").toLowerCase();
+  const names=poolNames();
+  const extra=(st.present||[]).filter(n=>!names.includes(n));
+  const list=[...new Set([...extra,...names])].sort();
+  box.innerHTML="";
+  list.forEach(n=>{
+    if(filter&&!n.toLowerCase().includes(filter))return;
+    const on=pres.has(n),nb=notableOf(n);
+    const c=document.createElement("div");c.className="chip"+(on?" on":"")+(nb?" notable":"");
+    c.innerHTML=esc(n)+(nb?` <small>${esc(nb)}</small>`:"");
+    c.onclick=()=>{if(pres.has(n))unmarkPresent(st,n);else markPresent(st,n);save();renderStandWalk(st);refreshTaxa();updateStandCount(st);};
+    box.appendChild(c);
+  });
+  const hint=document.getElementById("walkHint_"+st.id);
+  if(hint)hint.textContent=names.length?"Tap to mark present in this stand — feeds this stand's quadrat picker.":"No site pack loaded — import one in Survey details, or add species directly in quadrats.";
+}
+function updateStandCount(st){const t=document.querySelector(`[data-walk="${st.id}"]`);if(t)t.textContent=`▾ What's present in stand ${st.id} (${(st.present||[]).length})`;const c=document.querySelector(`[data-standcount="${st.id}"]`);if(c)c.textContent=`${S.quads.filter(q=>q.standId===st.id).length} quadrats · ${(st.present||[]).length} present`;}
+
+// ---------- stands ----------
+function standLabel(i){return String.fromCharCode(65+i);}
+function renderStands(){const box=document.getElementById("standList");box.innerHTML="";S.stands.forEach((st,i)=>{
+  st.present=st.present||[];
+  const d=document.createElement("div");d.className="quad";
+  const nq=S.quads.filter(q=>q.standId===st.id).length;
+  d.innerHTML=`<div class="qhd"><b>Stand ${st.id}</b><span class="count" data-standcount="${st.id}">${nq} quadrats · ${st.present.length} present</span></div>
+  <div class="qbody">
+   <div class="row"><label class="full">Date (auto-stamped — edit if needed)<input type="date" data-st="date" value="${esc(st.date||today())}"></label></div>
+   <div class="row"><label class="full">Description (habitat / physiognomy)<input data-st="desc" value="${esc(st.desc)}"></label></div>
+   <div class="row"><label class="full">Provisional community — note only (optional)<input data-st="provComm" value="${esc(st.provComm)}" placeholder="hunch; determined post-survey in RMAVIS"></label></div>
+   <div class="row"><label class="full">Stand notes<textarea data-st="notes">${esc(st.notes)}</textarea></label></div>
+   <div style="margin:6px 0"><span class="toggle" data-walk="${st.id}">▸ What's present in stand ${st.id} (${st.present.length})</span></div>
+   <div class="detail" id="walk_${st.id}">
+     <div class="muted" id="walkHint_${st.id}" style="margin:4px 0"></div>
+     <input placeholder="filter the site list…" data-walkfilter="${st.id}">
+     <div class="chips" id="pool_${st.id}"></div>
+     <div class="addsp">
+       <input list="allList" placeholder="found something not listed? add from BSBI…" data-walkadd="${st.id}">
+       <button class="sec sm" data-walkaddbtn="${st.id}" title="Add the typed species to this stand's present list">Mark present</button>
+     </div>
+   </div>
+   <button class="del" data-del="${st.id}" title="Delete this stand (only when it has no quadrats)">Delete stand ${st.id}</button>
+  </div>`;
+  d.querySelectorAll("[data-st]").forEach(inp=>inp.addEventListener("input",()=>{st[inp.dataset.st]=inp.value;save();}));
+  d.querySelector("[data-del]").onclick=()=>{
+    const n=S.quads.filter(q=>q.standId===st.id).length;
+    if(n){alert(`Stand ${st.id} still has ${n} quadrat(s). Delete or reassign those quadrats first.`);return;}
+    if(confirm(`Delete stand ${st.id}? This cannot be undone.`)){S.stands.splice(i,1);save();renderStands();renderQuads();}
+  };
+  const wp=d.querySelector("#walk_"+st.id),wt=d.querySelector("[data-walk]");
+  wt.onclick=()=>{wp.classList.toggle("open");if(wp.classList.contains("open")){renderStandWalk(st);wt.textContent=`▾ What's present in stand ${st.id} (${(st.present||[]).length})`;}else{wt.textContent=`▸ What's present in stand ${st.id} (${(st.present||[]).length})`;}};
+  d.querySelector("[data-walkfilter]").addEventListener("input",()=>renderStandWalk(st));
+  const wInp=d.querySelector("[data-walkadd]");const doWadd=()=>{const n=resolveSyn((wInp.value||"").trim());if(!n)return;markPresent(st,n);wInp.value="";save();renderStandWalk(st);refreshTaxa();updateStandCount(st);};
+  d.querySelector("[data-walkaddbtn]").onclick=doWadd;wInp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();doWadd();}});
+  box.appendChild(d);
+});}
+document.getElementById("btnAddStand").onclick=()=>{const id=standLabel(S.stands.length);S.stands.push({id,date:today(),desc:"",provComm:"",notes:"",present:[]});save();renderStands();renderQuads();};
+
+// ---------- quadrats ----------
+function renderQuads(){const box=document.getElementById("quadList");box.innerHTML="";
+  document.getElementById("qCount").textContent=S.quads.length?`${S.quads.length} total`:"";
+  S.quads.forEach((q,qi)=>{
+    const d=document.createElement("div");d.className="quad";
+    const standOpts=S.stands.map(s=>`<option value="${s.id}" ${s.id===q.standId?"selected":""}>Stand ${s.id}</option>`).join("");
+    const sizeOpts=SIZES.map(s=>`<option ${s===q.size?"selected":""}>${s}</option>`).join("");
+    d.innerHTML=`<div class="qhd"><b>Q${q.id}</b><span class="count">stand ${q.standId||"—"}</span></div>
+    <div class="qbody">
+      <div class="row">
+        <label>Quadrat ID<input data-q="id" value="${esc(q.id)}"></label>
+        <label>Stand<select data-q="standId">${standOpts||'<option value="">— add a stand —</option>'}</select></label>
+      </div>
+      <div class="row">
+        <label>Grid ref (8-fig)<input data-q="gridRef" value="${esc(q.gridRef)}" placeholder="TL000000"></label>
+        <label>&nbsp;<button class="lt sm" data-gps="${q.id}" title="Capture GPS and fill the 8-figure grid ref for this quadrat">📍 GPS</button></label>
+        <label>Size<select data-q="size">${sizeOpts}</select></label>
+      </div>
+      <div class="muted" style="margin:2px 0 4px">Domin ≠ DAFOR — record cover in the quadrat; never carry DAFOR across.</div>
+      <div class="splist" id="sp_${q.id}"></div>
+      <div class="muted" id="scored_${q.id}" style="margin:4px 0"></div>
+      <div class="addsp">
+        <input list="presentList" placeholder="Add from present…" data-addtaxon="${q.id}">
+        <button class="lt sm" data-mode="${q.id}" title="Switch the picker between this stand's present list and the full site + BSBI list">▾ present</button>
+        <button class="sec sm" data-addbtn="${q.id}" title="Add the typed species to this quadrat">Add</button>
+      </div>
+      <button class="lt sm" data-loadpresent="${q.id}" style="margin-top:6px" title="Pre-load every species marked present in this stand (Domin blank) so you only score what's here">⤓ Load stand ${q.standId||"?"}'s present list</button>
+      <div style="margin-top:8px"><span class="toggle" data-qd="${q.id}">▸ quadrat detail</span></div>
+      <div class="detail" id="qd_${q.id}">
+        <div class="row">
+          <label>Slope °<input data-q="slope" value="${esc(q.slope)}" inputmode="numeric"></label>
+          <label>Aspect<input data-q="aspect" value="${esc(q.aspect)}"></label>
+          <label>Altitude m<input data-q="altitude" value="${esc(q.altitude)}" inputmode="numeric"></label>
+        </div>
+        <div class="row">
+          <label>Veg height mean cm<input data-q="htMean" value="${esc(q.htMean)}" inputmode="numeric"></label>
+          <label>Veg height max cm<input data-q="htMax" value="${esc(q.htMax)}" inputmode="numeric"></label>
+          <label>Total cover %<input data-q="totalCover" value="${esc(q.totalCover)}" inputmode="numeric"></label>
+        </div>
+        <div class="row">
+          <label>Canopy %<input data-q="cCanopy" value="${esc(q.cCanopy)}" inputmode="numeric"></label>
+          <label>Shrub %<input data-q="cShrub" value="${esc(q.cShrub)}" inputmode="numeric"></label>
+          <label>Field %<input data-q="cField" value="${esc(q.cField)}" inputmode="numeric"></label>
+          <label>Ground %<input data-q="cGround" value="${esc(q.cGround)}" inputmode="numeric"></label>
+        </div>
+        <div class="row">
+          <label>Bare %<input data-q="bare" value="${esc(q.bare)}" inputmode="numeric"></label>
+          <label>Litter %<input data-q="litter" value="${esc(q.litter)}" inputmode="numeric"></label>
+          <label>Water/rock %<input data-q="water" value="${esc(q.water)}" inputmode="numeric"></label>
+        </div>
+        <div class="row"><label>Substrate / soil<input data-q="substrate" value="${esc(q.substrate)}"></label>
+          <label>Surface wetness / hydrology<input data-q="wetness" value="${esc(q.wetness)}"></label></div>
+        <div class="row"><label>Management / disturbance<input data-q="management" value="${esc(q.management)}"></label>
+          <label>Habitat / Phase 1<input data-q="habitat" value="${esc(q.habitat)}"></label></div>
+        <div class="row"><label class="full">what3words (optional)<input data-q="w3w" value="${esc(q.w3w)}"></label></div>
+      </div>
+      <button class="del" data-delq="${q.id}" title="Delete this quadrat and its scores">Delete quadrat Q${q.id}</button>
+    </div>`;
+    // bindings
+    d.querySelectorAll("[data-q]").forEach(inp=>inp.addEventListener("input",()=>{q[inp.dataset.q]=inp.value;if(inp.dataset.q==="id"){save();renderQuads();}else save();}));
+    d.querySelector("[data-delq]").onclick=()=>{if(confirm("Delete quadrat Q"+q.id+"?")){S.quads.splice(qi,1);save();renderQuads();renderStands();}};
+    d.querySelector("[data-qd]").onclick=()=>{document.getElementById("qd_"+q.id).classList.toggle("open");};
+    const gps=d.querySelector("[data-gps]");gps.onclick=()=>captureGPS(q,d);
+    d.querySelector("[data-addbtn]").onclick=()=>{const inp=d.querySelector("[data-addtaxon]");addSpecies(q,inp.value);inp.value="";renderSpecies(q);};
+    d.querySelector("[data-addtaxon]").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const v=e.target.value;addSpecies(q,v);e.target.value="";renderSpecies(q);}});
+    const modeBtn=d.querySelector("[data-mode]"),addInp=d.querySelector("[data-addtaxon]");
+    const stOf=()=>S.stands.find(s=>s.id===q.standId);
+    addInp.addEventListener("focus",()=>{if(addInp.getAttribute("list")==="presentList")setPresentList(stOf());});
+    modeBtn.onclick=()=>{const all=addInp.getAttribute("list")==="allList";if(all){addInp.setAttribute("list","presentList");setPresentList(stOf());addInp.placeholder="Add from present…";modeBtn.textContent="▾ present";}else{addInp.setAttribute("list","allList");addInp.placeholder="Add from full list (site + BSBI)…";modeBtn.textContent="▾ all";}addInp.focus();};
+    d.querySelector("[data-loadpresent]").onclick=()=>{const st=stOf();if(!st){alert("Assign a stand to this quadrat first.");return;}const pres=presentOf(st);if(!pres.length){alert(`Stand ${q.standId} has no 'present' species yet — walk the stand first (Stands → What's present).`);return;}const have=new Set((q.species||[]).map(s=>s.taxon));let added=0;q.species=q.species||[];pres.forEach(n=>{if(!have.has(n)){q.species.push({taxon:n,layer:"",domin:"",flags:""});added++;}});save();renderSpecies(q);};
+    box.appendChild(d);
+    renderSpecies(q);
+  });
+}
+document.getElementById("btnAddQuad").onclick=()=>{
+  const prev=S.quads[S.quads.length-1];
+  if(prev){
+    const blanks=(prev.species||[]).filter(s=>!s.domin).length;
+    if(blanks && !confirm(`Quadrat Q${prev.id}: ${blanks} species have no Domin and will be skipped on export.\n\nCreate the next quadrat anyway?`))return;
+    const est=estCover(prev);
+    if(est>COVER_WARN && !confirm(`Quadrat Q${prev.id}: estimated cover from the Domin scores ≈ ${est}%, which is unusually high — worth checking the high scores.\n\nCreate the next quadrat anyway?`))return;
+  }
+  if(!S.stands.length)S.stands.push({id:"A",date:today(),desc:"",provComm:"",notes:"",present:[]});
+  const lastStand=S.stands[S.stands.length-1].id;
+  const inStand=S.quads.filter(q=>q.standId===lastStand).length;
+  if(inStand>=5 && !confirm(`Stand ${lastStand} already has ${inStand} quadrats — 5 is usually sufficient per stand.\n\nCreate another?`))return;
+  const n=S.quads.length+1;
+  const firstInStand=S.quads.find(q=>q.standId===lastStand);
+  const species=firstInStand?(firstInStand.species||[]).map(s=>({taxon:s.taxon,layer:s.layer||"",domin:"",flags:""})):[];
+  S.quads.push({id:String(n),standId:lastStand,gridRef:"",size:"2 × 2 m",species});
+  save();renderStands();renderQuads();
+};
+
+function addSpecies(q,name){name=resolveSyn((name||"").trim());if(!name)return;const st=S.stands.find(s=>s.id===q.standId);if(st)markPresent(st,name);q.species=q.species||[];q.species.push({taxon:name,layer:"",domin:"",flags:""});save();refreshTaxa();renderStands();}
+function renderSpecies(q){const box=document.getElementById("sp_"+q.id);if(!box)return;box.innerHTML="";
+  const wood=isWoodland();
+  (q.species||[]).forEach((sp,si)=>{
+    const f=rankFlag(sp.taxon);const nb=notableOf(sp.taxon);const fl=(f?` <small>[${f}]</small>`:"")+(nb?` <small style="color:#7a5b00">★ ${esc(nb)}</small>`:"");
+    const dominOpts=DOMIN.map(([v,l])=>`<option value="${v}" ${v===sp.domin?"selected":""}>${v?v+" · "+l:"Domin"}</option>`).join("");
+    const layerOpts=LAYERS.map(l=>`<option value="${l}" ${l===sp.layer?"selected":""}>${l||"layer"}</option>`).join("");
+    const r=document.createElement("div");r.className="sp";
+    r.innerHTML=`<span class="nm">${esc(sp.taxon)}${fl}</span>
+      ${wood?`<select data-sp="layer">${layerOpts}</select>`:""}
+      <select data-sp="domin">${dominOpts}</select>
+      <button class="del sm" data-spdel="1">✕</button>`;
+    r.querySelectorAll("[data-sp]").forEach(s=>s.addEventListener("change",()=>{sp[s.dataset.sp]=s.value;save();updateScored(q);}));
+    r.querySelector("[data-spdel]").onclick=()=>{q.species.splice(si,1);save();renderSpecies(q);};
+    box.appendChild(r);
+  });
+  updateScored(q);
+}
+function updateScored(q){const el=document.getElementById("scored_"+q.id);if(!el)return;const tot=(q.species||[]).length;const sc=(q.species||[]).filter(s=>s.domin).length;const est=estCover(q);el.innerHTML=tot?`${sc} of ${tot} scored · est. cover ≈ ${est}%${est>COVER_WARN?' <span style="color:#b00">⚠ high</span>':""} — unscored skipped on export`:"";}
+
+// ---------- GPS ----------
+function captureGPS(q,card){if(!navigator.geolocation){alert("No geolocation");return;}
+  status("locating…");
+  navigator.geolocation.getCurrentPosition(p=>{
+    const gr=wgs84ToGridRef(p.coords.latitude,p.coords.longitude).ref;
+    q.gridRef=gr;q.lat=p.coords.latitude;q.lon=p.coords.longitude;save();
+    const inp=card.querySelector('[data-q="gridRef"]');if(inp)inp.value=gr;status("GPS ok");
+  },err=>{alert("GPS failed: "+err.message);status("saved");},{enableHighAccuracy:true,timeout:15000});
+}
+// WGS84 -> OSGB36 grid ref (Helmert + Transverse Mercator + NGR letters).
+// Validated against the OS worked example (E 651409.9, N 313177.2) to the metre.
+function wgs84ToGridRef(lat,lon){
+  const d2r=Math.PI/180;
+  const aW=6378137,fW=1/298.257223563,bW=aW*(1-fW),e2W=(aW*aW-bW*bW)/(aW*aW);
+  let phi=lat*d2r,lam=lon*d2r;
+  let nu=aW/Math.sqrt(1-e2W*Math.sin(phi)**2);
+  let x=nu*Math.cos(phi)*Math.cos(lam), y=nu*Math.cos(phi)*Math.sin(lam), z=(nu*(1-e2W))*Math.sin(phi);
+  const tx=-446.448,ty=125.157,tz=-542.060,s=20.4894e-6;
+  const rx=-0.1502/3600*d2r, ry=-0.2470/3600*d2r, rz=-0.8421/3600*d2r;
+  let x2=tx+(1+s)*x -rz*y +ry*z;
+  let y2=ty +rz*x +(1+s)*y -rx*z;
+  let z2=tz -ry*x +rx*y +(1+s)*z;
+  const a=6377563.396,b=6356256.909,e2=(a*a-b*b)/(a*a);
+  const p=Math.sqrt(x2*x2+y2*y2);
+  let phi2=Math.atan2(z2,p*(1-e2)),phiP;
+  do{const nu2=a/Math.sqrt(1-e2*Math.sin(phi2)**2);phiP=phi2;phi2=Math.atan2(z2+e2*nu2*Math.sin(phi2),p);}while(Math.abs(phi2-phiP)>1e-12);
+  return airyToGrid(phi2,Math.atan2(y2,x2));
+}
+function airyToGrid(phi,lam){
+  const a=6377563.396,b=6356256.909,F0=0.9996012717;
+  const lat0=49*Math.PI/180,lon0=-2*Math.PI/180,N0=-100000,E0=400000;
+  const e2=(a*a-b*b)/(a*a),n=(a-b)/(a+b);
+  const nu=a*F0/Math.sqrt(1-e2*Math.sin(phi)**2);
+  const rho=a*F0*(1-e2)/Math.pow(1-e2*Math.sin(phi)**2,1.5);
+  const eta2=nu/rho-1;
+  const Ma=(1+n+1.25*n*n+1.25*n*n*n)*(phi-lat0);
+  const Mb=(3*n+3*n*n+2.625*n*n*n)*Math.sin(phi-lat0)*Math.cos(phi+lat0);
+  const Mc=(1.875*n*n+1.875*n*n*n)*Math.sin(2*(phi-lat0))*Math.cos(2*(phi+lat0));
+  const Md=(35/24)*n*n*n*Math.sin(3*(phi-lat0))*Math.cos(3*(phi+lat0));
+  const M=b*F0*(Ma-Mb+Mc-Md);
+  const cp=Math.cos(phi),sp=Math.sin(phi),tp=Math.tan(phi);
+  const I=M+N0,II=nu/2*sp*cp,III=nu/24*sp*cp**3*(5-tp*tp+9*eta2),IIIA=nu/720*sp*cp**5*(61-58*tp*tp+tp**4);
+  const IV=nu*cp,V=nu/6*cp**3*(nu/rho-tp*tp),VI=nu/120*cp**5*(5-18*tp*tp+tp**4+14*eta2-58*tp*tp*eta2);
+  const dl=lam-lon0;
+  const N=I+II*dl*dl+III*dl**4+IIIA*dl**6;
+  const E=E0+IV*dl+V*dl**3+VI*dl**5;
+  return {E,N,ref:ngr(E,N)};
+}
+function ngr(E,N){
+  const e100=Math.floor(E/100000),n100=Math.floor(N/100000);
+  if(e100<0||e100>6||n100<0||n100>12)return Math.round(E)+","+Math.round(N);
+  const l1=(19-n100)-((19-n100)%5)+Math.floor((e100+10)/5);
+  const l2=((19-n100)*5)%25+(e100%5);
+  const A="ABCDEFGHJKLMNOPQRSTUVWXYZ";
+  const ee=Math.floor((E%100000)/10).toString().padStart(4,"0");
+  const nn=Math.floor((N%100000)/10).toString().padStart(4,"0");
+  return A[l1]+A[l2]+ee+nn;
+}
+
+// ---------- exports ----------
+function dmy(iso){if(!iso)return"";const[a,b,c]=iso.split("-");return c+"/"+b+"/"+a;}
+function esc(v){return (v==null?"":String(v)).replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+function csvCell(v){v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function download(name,text,mime){const b=new Blob([text],{type:mime||"text/csv"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
+
+const MASTER_COLS=["Taxon","Vernacular","Site","Compartment","compartment_as_recorded","recording_tier","Grid ref","Date","Recorder","Vice county","DAFOR / Abundance","Phenology","Check-ID","Lat","Lon","Status","Notes","scheme","record_context","survey_id","submitted_date","submission_ref","date_iso","QC flags","Taxon rank flag"];
+async function md5(s){const buf=await crypto.subtle.digest("MD5",new TextEncoder().encode(s)).catch(()=>null);if(!buf){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0;}return h.toString(16).padStart(10,"0").slice(0,10);}return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,10);}
+function survIdFor(date){const sv=S.survey;return simpleHash([sv.site,sv.comp,date,sv.surveyor].join("|"));}
+function simpleHash(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193);}return (h>>>0).toString(16).padStart(8,"0").slice(0,10);}
+
+function exportMaster(){const sv=S.survey;const rows=[MASTER_COLS.map(csvCell).join(",")];
+  S.quads.forEach(q=>{const st=(S.stands.find(s=>s.id===q.standId)||{});const dt=st.date||today();const sid=survIdFor(dt);
+    (q.species||[]).forEach(sp=>{if(!sp.domin)return;const note=`NVC quadrat ${q.id}, stand ${q.standId}`+(sp.layer?`, ${sp.layer}`:"")+(st.provComm?`, prov ${st.provComm}`:"");
+      const r={Taxon:sp.taxon,Vernacular:"",Site:sv.site||"",Compartment:sv.comp||"","compartment_as_recorded":sv.comp||"","recording_tier":"compartment","Grid ref":q.gridRef||"",Date:dmy(dt),Recorder:sv.surveyor||"","Vice county":sv.vc||"","DAFOR / Abundance":sp.domin?("Domin "+sp.domin):"",Phenology:"","Check-ID":"",Lat:q.lat||"",Lon:q.lon||"",Status:"",Notes:note,scheme:"nvc","record_context":"nvc_quadrat","survey_id":sid,"submitted_date":"","submission_ref":"","date_iso":dt,"QC flags":(q.gridRef?"gridref-precise":""),"Taxon rank flag":rankFlag(sp.taxon)};
+      rows.push(MASTER_COLS.map(c=>csvCell(r[c])).join(","));
+    });});
+  download((sv.site||"NVC")+"_master_"+today()+".csv",rows.join("\n"));markSafe();
+}
+
+function exportRmavis(){const sv=S.survey;
+  const rows=[["Year","Group","Quadrat","Species","Cover"].join(",")];const dropped=[];
+  S.quads.forEach(q=>{const st=(S.stands.find(s=>s.id===q.standId)||{});const yr=(st.date||today()).slice(0,4);
+    (q.species||[]).forEach(sp=>{
+    if(!sp.domin)return;
+    if(!rmavisOK(sp.taxon)){dropped.push(sp.taxon);return;}
+    let name=rmavisName(sp.taxon);
+    if(isWoodland()&&sp.layer&&STRATA[sp.layer])name=name+" "+STRATA[sp.layer];
+    rows.push([yr,csvCell("Stand "+q.standId),csvCell(q.id),csvCell(name),sp.domin||""].join(","));
+  });});
+  download((sv.site||"NVC")+"_RMAVIS_"+today()+".csv",rows.join("\n"));markSafe();
+  const uniq=[...new Set(dropped)];
+  document.getElementById("exportWarn").innerHTML=uniq.length?`<div class="warn">RMAVIS export omitted ${uniq.length} non-matchable taxa (genus-only / aggregate): ${uniq.map(esc).join(", ")}. These stay in the master CSV.</div>`:"";
+}
+
+document.getElementById("btnMaster").onclick=exportMaster;
+document.getElementById("btnRmavis").onclick=exportRmavis;
+
+// ---------- full-state backup / restore (recovery snapshot; lossless, unlike CSV) ----------
+// ---------- "saved to a file" nudge ----------
+function markSafe(){S.lastSafe=Date.now();save();updateSafeAgo();}
+function updateSafeAgo(){const e=document.getElementById("savedAgo");if(!e)return;
+  const has=S.quads.length||S.stands.some(s=>(s.present||[]).length);
+  if(!has){e.style.display="none";return;}
+  e.style.display="block";const t=S.lastSafe;
+  if(!t){e.style.background="#fdecea";e.style.color="#b00";e.textContent="⚠ Not yet saved to a file — use 💾 Backup or ⬇ export";return;}
+  const mins=Math.round((Date.now()-t)/60000);
+  if(mins>=60){e.style.background="#fdecea";e.style.color="#b00";e.textContent="⚠ No file save for "+Math.floor(mins/60)+"h "+(mins%60)+"m — back up or export";}
+  else{e.style.background="#eaf5ea";e.style.color="#2e7d32";e.textContent="✓ Last saved to file "+(mins<1?"just now":mins+"m ago");}
+}
+setInterval(updateSafeAgo,30000);
+
+function backup(){
+  const sv=S.survey;
+  const name=((sv.site||"NVC")+"_"+(sv.comp||"")+"_"+today()+"_backup").replace(/[^\w]+/g,"_")+".json";
+  download(name,JSON.stringify(S,null,2),"application/json");
+  markSafe();status("backed up");
+}
+document.getElementById("btnBackup").onclick=backup;
+document.getElementById("btnRestore").onclick=()=>document.getElementById("restoreFile").click();
+document.getElementById("restoreFile").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    let obj;
+    try{obj=JSON.parse(r.result);}catch(err){alert("Restore failed — file isn't valid JSON.\n\n"+err.message);return;}
+    if(!(obj&&obj.survey&&Array.isArray(obj.stands)&&Array.isArray(obj.quads))){alert("That file isn't an NVC survey backup (expected survey / stands / quads).\n\nTip: species packs load via \u201cImport species pack\u201d, not Restore.");return;}
+    if(!confirm("Restore this backup?\n\nIt REPLACES the survey currently on this device. Back the current one up first if you need it."))return;
+    S=obj;if(!S.present)S.present=[];
+    S.stands.forEach(st=>{if(!st.date)st.date=today();st.present=st.present||[];});
+    if(!S.survey.target)S.survey.target="Grassland";
+    if(S.pack){loadPack(S.pack);applyPackHeader();}
+    Object.entries(SF).forEach(([id,k])=>{const el=document.getElementById(id);if(el&&S.survey[k]!=null)el.value=S.survey[k];});
+    document.getElementById("f_target").value=S.survey.target;
+    if(S.pack)document.getElementById("packStatus").textContent="pack: "+(S.pack.site||"loaded")+" ("+poolNames().length+" site · "+pack.allTaxa.length+" wider)";
+    save();refreshTaxa();renderStands();renderQuads();status("restored");
+    alert("Backup restored: "+(S.survey.site||"")+" — "+S.stands.length+" stand(s), "+S.quads.length+" quadrat(s).");
+  };
+  r.onerror=()=>alert("Could not read the file.");
+  r.readAsText(f);
+  e.target.value="";
+};
+document.getElementById("btnReset").onclick=()=>{if(confirm("Start a NEW survey?\n\nThis permanently clears all stands, quadrats and species from this device. Export your CSVs first if you haven't already.")){localStorage.removeItem(KEY);location.reload();}};
+
+// ---------- init ----------
+if(!S.survey.target)S.survey.target="Grassland";
+document.getElementById("f_target").value=S.survey.target;
+S.stands.forEach(st=>{if(!st.date)st.date=S.survey.date||today();st.present=st.present||[];});
+// migrate any survey-level present list (v1.2) onto the first stand
+if(Array.isArray(S.present)&&S.present.length){if(!S.stands.length)S.stands.push({id:"A",date:today(),desc:"",provComm:"",notes:"",present:[]});S.present.forEach(n=>markPresent(S.stands[0],n));}
+S.present=[];
+if(S.pack){loadPack(S.pack);applyPackHeader();document.getElementById("packStatus").textContent="pack: "+(S.pack.site||"loaded")+" ("+poolNames().length+" site · "+pack.allTaxa.length+" wider)";}
+// ensure quadrat species are marked present in their stand
+S.quads.forEach(q=>{const st=S.stands.find(s=>s.id===q.standId);if(st)(q.species||[]).forEach(sp=>markPresent(st,sp.taxon));});
+refreshTaxa();populateCompartments();renderStands();renderQuads();updateSafeAgo();status("ready");
+// ---------- durability additions ----------
+function _nvcToast(msg){let t=document.getElementById("_nvcToast");
+  if(!t){t=document.createElement("div");t.id="_nvcToast";
+    t.style.cssText="position:fixed;left:50%;top:0;transform:translate(-50%,-130%);background:#234d33;color:#fff;font:700 13px -apple-system,sans-serif;padding:9px 15px;border-radius:0 0 13px 13px;z-index:9999;box-shadow:0 2px 9px rgba(0,0,0,.32);transition:transform .3s ease;max-width:92%;text-align:center";
+    document.body.appendChild(t);}
+  t.textContent=msg;t.style.transform="translate(-50%,0)";
+  clearTimeout(t._h);t._h=setTimeout(()=>{t.style.transform="translate(-50%,-130%)";},3600);}
+function _nvcFlush(){try{save();}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.hidden)_nvcFlush();});
+window.addEventListener("pagehide",_nvcFlush);
+window.addEventListener("beforeunload",_nvcFlush);
+try{const _ns=S.stands.length,_nq=S.quads.length;
+  if(_ns||_nq)setTimeout(()=>_nvcToast("Restored: "+_ns+" stand"+(_ns===1?"":"s")+", "+_nq+" quadrat"+(_nq===1?"":"s")),350);}catch(e){}
+</script>
+</body>
+</html>
