@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Essex Monad Grid</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  #wrap{display:flex;flex-direction:column;height:100%}
+  header{background:#1f3b2c;color:#fff;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  header h1{margin:0;font-size:15px;font-weight:700}
+  header .where{font-size:12px;color:#cfe3d4;margin-top:2px}
+  #locate{flex:none;background:#2f6b3d;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:800;padding:9px 13px}
+  #map{flex:1;min-height:300px}
+  .hint{position:absolute;left:8px;bottom:8px;z-index:500;background:rgba(255,255,255,.92);border-radius:7px;
+    padding:5px 9px;font-size:11px;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+  .mlbl{font-size:11px;font-weight:700;color:#143;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff;white-space:nowrap}
+  .hlbl{font-size:13px;font-weight:800;color:#7a1f1f;text-shadow:0 0 2px #fff,0 0 3px #fff;white-space:nowrap}
+  .me{background:#1769d6;border:2px solid #fff;border-radius:50%;width:16px;height:16px;box-shadow:0 0 0 2px #1769d6}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <div><h1>Essex Monad Grid <span style="font-weight:400;font-size:11px;opacity:.7">build 2026-06-27</span></h1><div class="where" id="where">Zoom in for monad labels · tap Locate</div></div>
+    <button id="locate">📍 Locate</button>
+  </header>
+  <div id="map"></div>
+</div>
+<div class="hint" id="hint"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ---------- validated OSGB <-> WGS84 transforms (Helmert + Airy TM) ----------
+function latLonToOS(lat,lon){
+  var a=6378137.0,f=1/298.257223563,e2=2*f-f*f,phi=lat*Math.PI/180,lam=lon*Math.PI/180;
+  var nu=a/Math.sqrt(1-e2*Math.pow(Math.sin(phi),2));
+  var x=nu*Math.cos(phi)*Math.cos(lam),y=nu*Math.cos(phi)*Math.sin(lam),z=(1-e2)*nu*Math.sin(phi);
+  var s=20.4894e-6,rx=-0.1502/3600*Math.PI/180,ry=-0.2470/3600*Math.PI/180,rz=-0.8421/3600*Math.PI/180;
+  var x2=-446.448+(1+s)*x-rz*y+ry*z, y2=125.157+rz*x+(1+s)*y-rx*z, z2=-542.060-ry*x+rx*y+(1+s)*z;
+  var a2=6377563.396,b2=6356256.909,e22=(a2*a2-b2*b2)/(a2*a2),p=Math.sqrt(x2*x2+y2*y2),phi2=Math.atan2(z2,p*(1-e22)),nu2;
+  for(var i=0;i<10;i++){nu2=a2/Math.sqrt(1-e22*Math.pow(Math.sin(phi2),2));phi2=Math.atan2(z2+e22*nu2*Math.sin(phi2),p);}
+  var lam2=Math.atan2(y2,x2);
+  var F0=0.9996012717,lat0=49*Math.PI/180,lon0=-2*Math.PI/180,E0=400000,N0=-100000,n=(a2-b2)/(a2+b2);
+  nu2=a2*F0/Math.sqrt(1-e22*Math.pow(Math.sin(phi2),2));
+  var rho=a2*F0*(1-e22)/Math.pow(1-e22*Math.pow(Math.sin(phi2),2),1.5),eta2=nu2/rho-1;
+  var Ma=(1+n+1.25*n*n+1.25*n*n*n)*(phi2-lat0);
+  var Mb=(3*n+3*n*n+2.625*n*n*n)*Math.sin(phi2-lat0)*Math.cos(phi2+lat0);
+  var Mc=(1.875*n*n+1.875*n*n*n)*Math.sin(2*(phi2-lat0))*Math.cos(2*(phi2+lat0));
+  var Md=35/24*n*n*n*Math.sin(3*(phi2-lat0))*Math.cos(3*(phi2+lat0));
+  var M=b2*F0*(Ma-Mb+Mc-Md),cp=Math.cos(phi2),sp=Math.sin(phi2),tp=Math.tan(phi2);
+  var I=M+N0,II=nu2/2*sp*cp,III=nu2/24*sp*Math.pow(cp,3)*(5-tp*tp+9*eta2),IIIA=nu2/720*sp*Math.pow(cp,5)*(61-58*tp*tp+Math.pow(tp,4));
+  var IV=nu2*cp,V=nu2/6*Math.pow(cp,3)*(nu2/rho-tp*tp),VI=nu2/120*Math.pow(cp,5)*(5-18*tp*tp+Math.pow(tp,4)+14*eta2-58*tp*tp*eta2);
+  var dl=lam2-lon0;
+  return {e:E0+IV*dl+V*Math.pow(dl,3)+VI*Math.pow(dl,5), n:I+II*dl*dl+III*Math.pow(dl,4)+IIIA*Math.pow(dl,6)};
+}
+function osToLatLon(E,N){
+  var a=6377563.396,b=6356256.909,F0=0.9996012717,lat0=49*Math.PI/180,lon0=-2*Math.PI/180,E0=400000,N0=-100000;
+  var e2=(a*a-b*b)/(a*a),n=(a-b)/(a+b),lat=lat0,M=0;
+  do{ lat=(N-N0-M)/(a*F0)+lat;
+    var Ma=(1+n+1.25*n*n+1.25*n*n*n)*(lat-lat0);
+    var Mb=(3*n+3*n*n+2.625*n*n*n)*Math.sin(lat-lat0)*Math.cos(lat+lat0);
+    var Mc=(1.875*n*n+1.875*n*n*n)*Math.sin(2*(lat-lat0))*Math.cos(2*(lat+lat0));
+    var Md=35/24*n*n*n*Math.sin(3*(lat-lat0))*Math.cos(3*(lat+lat0));
+    M=b*F0*(Ma-Mb+Mc-Md);
+  } while(Math.abs(N-N0-M)>=1e-5);
+  var nu=a*F0/Math.sqrt(1-e2*Math.pow(Math.sin(lat),2));
+  var rho=a*F0*(1-e2)/Math.pow(1-e2*Math.pow(Math.sin(lat),2),1.5),eta2=nu/rho-1;
+  var tp=Math.tan(lat),sp=1/Math.cos(lat);
+  var VII=tp/(2*rho*nu),VIII=tp/(24*rho*Math.pow(nu,3))*(5+3*tp*tp+eta2-9*tp*tp*eta2),IX=tp/(720*rho*Math.pow(nu,5))*(61+90*tp*tp+45*Math.pow(tp,4));
+  var X=sp/nu,XI=sp/(6*Math.pow(nu,3))*(nu/rho+2*tp*tp),XII=sp/(120*Math.pow(nu,5))*(5+28*tp*tp+24*Math.pow(tp,4));
+  var XIIA=sp/(5040*Math.pow(nu,7))*(61+662*tp*tp+1320*Math.pow(tp,4)+720*Math.pow(tp,6)),dE=E-E0;
+  var lat2=lat-VII*dE*dE+VIII*Math.pow(dE,4)-IX*Math.pow(dE,6);
+  var lon2=lon0+X*dE-XI*Math.pow(dE,3)+XII*Math.pow(dE,5)-XIIA*Math.pow(dE,7);
+  // OSGB36 -> WGS84
+  var e22=(a*a-b*b)/(a*a),nu0=a/Math.sqrt(1-e22*Math.pow(Math.sin(lat2),2));
+  var x=nu0*Math.cos(lat2)*Math.cos(lon2),y=nu0*Math.cos(lat2)*Math.sin(lon2),z=(1-e22)*nu0*Math.sin(lat2);
+  var s=-20.4894e-6,rx=0.1502/3600*Math.PI/180,ry=0.2470/3600*Math.PI/180,rz=0.8421/3600*Math.PI/180;
+  var x2=446.448+(1+s)*x-rz*y+ry*z, y2=-125.157+rz*x+(1+s)*y-rx*z, z2=542.060-ry*x+rx*y+(1+s)*z;
+  var aW=6378137.0,fW=1/298.257223563,e2W=2*fW-fW*fW,p=Math.sqrt(x2*x2+y2*y2),phi=Math.atan2(z2,p*(1-e2W)),nuW;
+  for(var i=0;i<8;i++){nuW=aW/Math.sqrt(1-e2W*Math.pow(Math.sin(phi),2));phi=Math.atan2(z2+e2W*nuW*Math.sin(phi),p);}
+  return {lat:phi*180/Math.PI, lon:Math.atan2(y2,x2)*180/Math.PI};
+}
+var LET='ABCDEFGHJKLMNOPQRSTUVWXYZ';
+function gridref(E,N,res){
+  var e100=Math.floor(E/100000),n100=Math.floor(N/100000);
+  if(e100<0||e100>6||n100<0||n100>12) return null;
+  var l1=(19-n100)-(19-n100)%5+Math.floor((e100+10)/5), l2=((19-n100)*5)%25+e100%5;
+  var L=LET[l1]+LET[l2];
+  if(res>=10000){return L+Math.floor((E%100000)/10000)+''+Math.floor((N%100000)/10000);}
+  var ee=Math.floor((E%100000)/1000),nn=Math.floor((N%100000)/1000);
+  return L+(ee<10?'0':'')+ee+(nn<10?'0':'')+nn;
+}
+
+// ---------- map ----------
+var osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'});
+var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles &copy; Esri'});
+var map=L.map('map',{layers:[osm]}).setView([51.80,0.60],10);
+L.control.layers({'Map':osm,'Satellite':sat},null,{collapsed:true}).addTo(map);
+var grid=L.layerGroup().addTo(map);
+var hintEl=document.getElementById('hint');
+
+function drawGrid(){
+  grid.clearLayers();
+  var z=map.getZoom();
+  var res = z>=13 ? 1000 : (z>=10 ? 10000 : 0);
+  if(!res){hintEl.textContent='Zoom in to z10 for hectads, z13 for monads'; return;}
+  hintEl.textContent = res===1000 ? 'Monads (1 km) · '+'z'+z : 'Hectads (10 km) · zoom to z13 for monads';
+  var b=map.getBounds();
+  // sample the four corners to bound the BNG range (grid is slightly rotated)
+  var cs=[b.getSouthWest(),b.getNorthWest(),b.getNorthEast(),b.getSouthEast()].map(function(c){return latLonToOS(c.lat,c.lng);});
+  var minE=Math.min.apply(null,cs.map(function(p){return p.e;}))-res, maxE=Math.max.apply(null,cs.map(function(p){return p.e;}))+res;
+  var minN=Math.min.apply(null,cs.map(function(p){return p.n;}))-res, maxN=Math.max.apply(null,cs.map(function(p){return p.n;}))+res;
+  var E0=Math.floor(minE/res)*res, N0=Math.floor(minN/res)*res, count=0;
+  for(var E=E0;E<=maxE;E+=res){
+    for(var N=N0;N<=maxN;N+=res){
+      if(count>700) {hintEl.textContent='Zoom in — too many cells to label'; return;}
+      var ref=gridref(E,N,res); if(!ref) continue;
+      var c1=osToLatLon(E,N),c2=osToLatLon(E+res,N),c3=osToLatLon(E+res,N+res),c4=osToLatLon(E,N+res);
+      L.polygon([[c1.lat,c1.lon],[c2.lat,c2.lon],[c3.lat,c3.lon],[c4.lat,c4.lon]],
+        {color: res===1000?'#2f6b3d':'#7a1f1f', weight: res===1000?1:1.5, fill:false, opacity:0.7}).addTo(grid);
+      var ctr=osToLatLon(E+res/2,N+res/2);
+      L.marker([ctr.lat,ctr.lon],{interactive:false,icon:L.divIcon({className:'',html:'<div class="'+(res===1000?'mlbl':'hlbl')+'">'+ref+'</div>',iconSize:[1,1]})}).addTo(grid);
+      count++;
+    }
+  }
+}
+map.on('moveend zoomend',drawGrid);
+drawGrid();
+
+// ---------- locate ----------
+var meMarker=null;
+document.getElementById('locate').onclick=function(){
+  if(!navigator.geolocation){document.getElementById('where').textContent='No GPS on this device';return;}
+  document.getElementById('where').textContent='Locating…';
+  navigator.geolocation.getCurrentPosition(function(p){
+    var lat=p.coords.latitude,lon=p.coords.longitude,acc=Math.round(p.coords.accuracy||0);
+    var os=latLonToOS(lat,lon),ref=gridref(os.e,os.n,1000);
+    document.getElementById('where').textContent='You are in '+(ref||'outside GB grid')+'  (±'+acc+' m)';
+    if(meMarker) map.removeLayer(meMarker);
+    meMarker=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div class="me"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(map);
+    map.setView([lat,lon], Math.max(map.getZoom(),14));
+  },function(err){document.getElementById('where').textContent='GPS '+(err.code===1?'permission denied':'unavailable');},
+  {enableHighAccuracy:true,timeout:12000,maximumAge:0});
+};
+</script>
+</body>
+</html>
