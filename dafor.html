@@ -133,6 +133,7 @@
 <div id="importscreen">
   <div class="card">
     <h1>DAFOR Survey</h1>
+    <div style="font-size:12px;color:#9aa8a0;margin:-2px 0 10px">build 2026-06-27 · importer v13.2</div>
     <p>Load a site pack to begin. The pack carries the site’s species baseline, compartments, notable list and the full county checklist — everything works offline once loaded.</p>
     <button class="imp" onclick="document.getElementById('pickfile').click()">📂 Load site pack…</button>
     <button class="sub" id="resumeBtn" style="display:none" onclick="resumeLast()">↩︎ Resume last site</button>
@@ -331,7 +332,7 @@ function applyPack(pack){
   // pick-name index for add box
   window.meta_byname={}; PICK.forEach(p=>window.meta_byname[p.n.toLowerCase()]=p);
   el('siteTitle').textContent = SITE+" · DAFOR survey ("+(pack.vice_county||"VC?")+")";
-  el('buildstamp').textContent = "Build 2026-06-24 · importer v13 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
+  el('buildstamp').textContent = "Build 2026-06-27 · importer v13.2 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
   if(!el('date').value){ el('date').value=new Date().toISOString().slice(0,10); }
   // persist for resume
   try{ localStorage.setItem(LASTKEY, JSON.stringify(pack)); }catch(e){}
