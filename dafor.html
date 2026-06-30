@@ -29,11 +29,18 @@
   .bar button.fin{background:#2f6b3d;color:#fff}
   .bar button.warn{background:#f3c9c2;color:#5a1c12}
   .count{font-size:12px;opacity:.95;margin-top:6px}
-  .search{position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 10px 4px;border-bottom:1px solid var(--line)}
+  .search{padding:8px 10px 4px;background:var(--bg)}
   .search input{width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:9px}
-  .chips{display:flex;gap:6px;padding:8px 10px;flex-wrap:wrap;background:var(--bg);border-bottom:1px solid var(--line)}
+  /* sticky three-tier filter block: search + scope + status + tags all stay put */
+  #filterblock{position:sticky;top:0;z-index:22;background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 2px 5px rgba(0,0,0,.05)}
+  .chiprow{display:flex;gap:6px;padding:4px 10px;flex-wrap:wrap;align-items:center}
+  .chiprow:last-child{padding-bottom:8px}
+  .grouplbl{flex:none;font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#7c8a80;min-width:46px}
   .chip{border:1px solid var(--line);background:#fff;border-radius:16px;padding:6px 12px;font-size:13px;font-weight:600;color:#33493a;min-height:36px}
-  .chip.on{background:#2f6b3d;color:#fff;border-color:transparent}
+  .chip.scope.on{background:#1f3b2c;color:#fff;border-color:transparent}
+  .chip.status.on{background:#2f6b3d;color:#fff;border-color:transparent}
+  .chip.tag.on{background:#4d9c5a;color:#fff;border-color:transparent}
+  .chip.clearbtn{margin-left:auto;background:#eef1f4;color:#556;border-color:#dde3ea;font-weight:700}
   #cnotewrap{padding:0 10px 8px}
   #cnotewrap textarea{width:100%;min-height:72px;font-size:14px;padding:9px;border:1px solid var(--line);border-radius:9px;-webkit-user-select:text;user-select:text}
   .legend{font-size:11px;color:#566;padding:4px 10px 8px}
@@ -79,6 +86,10 @@
   .tgl.on{background:#2f6b3d;color:#fff;border-color:transparent}
   .tgl.del{background:#fbe9e6;color:#a12;border-color:#f0cfc8}
   .tgl.clr{background:#eef1f4;color:#445;border-color:#dde3ea}
+  .noteresue{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 0}
+  .noteresue .rl{flex:none;font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#7c8a80;align-self:center;margin-right:2px}
+  .rchip{border:1px solid var(--line);background:#f4f8f4;border-radius:14px;padding:5px 10px;font-size:12.5px;color:#33493a;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .rchip:active{background:#e6f0e6}
   .addwrap{padding:12px 10px 70px}
   @media (min-width:880px){
     table{max-width:820px;margin-left:auto;margin-right:auto}
@@ -139,7 +150,7 @@
   <a href="index.html" class="dhome" style="position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px">‹ Home</a>
   <div class="card">
     <h1>DAFOR Survey</h1>
-    <div style="font-size:12px;color:#9aa8a0;margin:-2px 0 10px">build 2026-06-27 · importer v13.2</div>
+    <div style="font-size:12px;color:#9aa8a0;margin:-2px 0 10px">build 2026-06-30 · importer v14</div>
     <p>Load a site pack to begin. The pack carries the site’s species baseline, compartments, notable list and the full county checklist — everything works offline once loaded.</p>
     <button class="imp" onclick="document.getElementById('pickfile').click()">📂 Load site pack…</button>
     <button class="sub" id="resumeBtn" style="display:none" onclick="resumeLast()">↩︎ Resume last site</button>
@@ -187,16 +198,36 @@
 </div>
 
 <div id="opennote" style="background:#fff3cd;color:#5a4a00;padding:9px 12px;font-size:13px;border-bottom:1px solid #e6d27a">⚠️ If the D/A/F/O/R buttons don't highlight when tapped, this opened in a preview that blocks scripts. Tap the <b>Share</b> icon → <b>Open in Safari</b>. Species below are visible either way.</div>
+<script>
+/* Hide the preview-mode warning when running as an installed PWA (home-screen / standalone):
+   the banner's premise (a preview that blocks scripts) can't apply once installed. */
+(function(){
+  var standalone = (window.navigator.standalone===true) ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  if(standalone){ var n=document.getElementById('opennote'); if(n) n.style.display='none'; }
+})();
+</script>
+<div id="filterblock">
 <div class="search"><input id="filter" placeholder="🔍 Filter species (name or common)…" autocomplete="off"></div>
-<div class="chips">
-  <button class="chip on" data-mode="all" onclick="setMode('all',this)">All</button>
-  <button class="chip" data-mode="tofind" onclick="setMode('tofind',this)">To find</button>
-  <button class="chip" data-mode="recorded" onclick="setMode('recorded',this)">Recorded</button>
-  <button class="chip" data-mode="new" onclick="setMode('new',this)">New</button>
-  <button class="chip" data-mode="notable" onclick="setMode('notable',this)">Notable</button>
-  <button class="chip" data-mode="check" onclick="setMode('check',this)">Check ID</button>
-  <button class="chip" data-mode="herebefore" onclick="setMode('herebefore',this)">Here before</button>
-  <button class="chip" data-mode="earlier" onclick="setMode('earlier',this)">Earlier yrs</button>
+<div class="chiprow">
+  <span class="grouplbl">Scope</span>
+  <button class="chip scope on" data-scope="all" onclick="setScope('all',this)">All site</button>
+  <button class="chip scope" data-scope="comp" onclick="setScope('comp',this)">This compartment</button>
+  <button class="chip clearbtn" onclick="clearFilters()" title="Reset all filters">✕ Clear</button>
+</div>
+<div class="chiprow">
+  <span class="grouplbl">Status</span>
+  <button class="chip status on" data-status="all" onclick="setStatus('all',this)">All</button>
+  <button class="chip status" data-status="tofind" onclick="setStatus('tofind',this)">To find</button>
+  <button class="chip status" data-status="recorded" onclick="setStatus('recorded',this)">Recorded</button>
+</div>
+<div class="chiprow">
+  <span class="grouplbl">Tags</span>
+  <button class="chip tag" data-tag="notable" onclick="toggleTag('notable',this)">Notable</button>
+  <button class="chip tag" data-tag="new" onclick="toggleTag('new',this)">New</button>
+  <button class="chip tag" data-tag="check" onclick="toggleTag('check',this)">Check ID</button>
+  <button class="chip tag" data-tag="earlier" onclick="toggleTag('earlier',this)">Earlier yrs</button>
+</div>
 </div>
 <div id="cnotewrap" style="display:none"><textarea id="compnotes" placeholder="Compartment notes / management recommendations…"></textarea></div>
 <div class="legend">Tap D·A·F·O·R (tap again clears); LA adds on top. ⋯ opens details (note · Check ID · flowering · location). ◆ = notable. Grey chip = baseline record. <button id="keytoggle" onclick="toggleKey()" aria-expanded="false">❔ Symbols key</button></div>
@@ -251,7 +282,9 @@ let NOTABLE={}, NATIV={}, SYN={}, PICK=[];
 let baseSet=new Set();
 let order=[], state={}, siteExtras=[];
 let surveyStart=null, surveyEnd=null;
-let filterMode='all';
+let scopeMode='all';        // 'all' | 'comp'  (spatial scope)
+let statusMode='all';       // 'all' | 'tofind' | 'recorded'
+let tagFilters=new Set();   // any of: 'notable','new','check','earlier' (multi-select)
 const DAF=['D','A','F','O','R'];
 const LASTKEY="dafor::lastpack";   // stores last pack JSON for resume
 
@@ -261,8 +294,8 @@ const HELP=[
  ["LA","Locally Abundant modifier — tap with or without a DAFOR letter where a species is patchy but dominant in places."],
  ["⋯ detail","Per-species panel: free note, ?ID (Check-ID) flag, flowering vs vegetative, and 📍 GPS to locate that record."],
  ["Add species box","Type a species not on the list. Synonyms resolve to the BSBI accepted name; notable status flags live as you type."],
- ["Filter chips","Narrow the list: All / to find / recorded / added / notable / ?ID / Here before (baseline in this compartment) / Earlier yrs."],
- ["✓ Finish","Shows a summary and the notable list, and reminds you to stop OS Maps route logging."],
+ ["Filters","Three tiers that combine: Scope (All site / This compartment), Status (All / to find / Recorded), and Tags (Notable / New / ?ID / Earlier yrs, multi-select). Counts on each chip show what you'd see if you tapped it. ✕ Clear resets all three."],
+ ["✓ Finish","Shows a summary and the notable list, and reminds you to stop OS Maps route logging. Recording effort is the span from your first to last record — it can't be forgotten or left running."],
  ["⬇ Export","Downloads the 24-column master CSV straight to Files."],
  ["📤 Share","Sends the master CSV through the iOS share sheet (Drive, AirDrop, Mail…). iOS adds a companion .txt — ignore it."],
  ["📍 Points","Exports located records (those with a 📍 GPS point) as GeoJSON for ArcGIS Pro."],
@@ -318,12 +351,23 @@ function applyPack(pack){
   NOTABLE = pack.notable_lookup||{};
   NATIV   = pack.nativity_lookup||{};
   SYN     = pack.synonym_map||{};
-  PICK    = (pack.pick||[]).map(p=> typeof p==='string'?{n:p,v:(NATIV[p]?"":"")}:p);
-  // PICK entries: pack 'pick' is a flat name array; attach vernacular where known via baseline/com is absent,
-  // so just carry name; vernacular shown only if present in a {n,v} object.
-  if(pack.pick && typeof pack.pick[0]==='string'){
-    PICK = pack.pick.map(n=>({n:n, v:""}));
-  }
+
+  // ---- vernacular map: name -> English name, from every source the pack carries ----
+  // Priority: explicit pack.vernacular_lookup (new gen) > baseline vernaculars > pick {n,v} objects.
+  window.VERN={};
+  (pack.baseline||[]).forEach(b=>{ if(b.taxon && b.vernacular) window.VERN[b.taxon]=b.vernacular; });
+  if(pack.vernacular_lookup){ for(const k in pack.vernacular_lookup){ if(pack.vernacular_lookup[k]) window.VERN[k]=pack.vernacular_lookup[k]; } }
+
+  // PICK: accept either bare-string names (old packs) or {n,v} objects (new gen).
+  // Enrich v from the vernacular map so added/searched species show their English name
+  // even when the pack's pick list carries names only.
+  PICK = (pack.pick||[]).map(p=>{
+    if(typeof p==='string'){ return {n:p, v:(window.VERN[p]||"")}; }
+    return {n:p.n, v:(p.v||window.VERN[p.n]||"")};
+  });
+  // back-fill the vernacular map from any pick objects that did carry a vernacular
+  PICK.forEach(p=>{ if(p.v && !window.VERN[p.n]) window.VERN[p.n]=p.v; });
+  SYN     = pack.synonym_map||SYN;
   baseSet = new Set(SPECIES.map(s=>s.sci));
   // lowercase synonym index for case-insensitive resolution
   window._synLow={};
@@ -338,7 +382,7 @@ function applyPack(pack){
   // pick-name index for add box
   window.meta_byname={}; PICK.forEach(p=>window.meta_byname[p.n.toLowerCase()]=p);
   el('siteTitle').textContent = SITE+" · DAFOR survey ("+(pack.vice_county||"VC?")+")";
-  el('buildstamp').textContent = "Build 2026-06-27 · importer v13.2 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
+  el('buildstamp').textContent = "Build 2026-06-30 · importer v14 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
   if(!el('date').value){ el('date').value=new Date().toISOString().slice(0,10); }
   // persist for resume
   try{ localStorage.setItem(LASTKEY, JSON.stringify(pack)); }catch(e){}
@@ -398,10 +442,32 @@ function showResumeInfo(){
 /* ===================== STATE: load / save ===================== */
 function key(){return "dafor::"+SITE+"::"+(el('compartment').value.trim()||"-")}
 function extrasKey(){return "extras::"+SITE}
-function newRec(){return {daf:null,la:false,note:"",check:false,veg:false,lat:null,lon:null}}
+function newRec(){return {daf:null,la:false,note:"",check:false,veg:false,lat:null,lon:null,t:null}}
 function markStart(){if(!surveyStart){surveyStart=Date.now();save();
   el('startprompt').classList.add('show');}}
 function dismissStart(){el('startprompt').classList.remove('show');}
+
+/* ---------- note reuse: remember notes typed this session, offer as tap-to-insert ---------- */
+function recentNotesKey(){return "notes::"+SITE;}
+function loadRecentNotes(){
+  try{ return JSON.parse(localStorage.getItem(recentNotesKey())||"[]"); }catch(e){ return []; }
+}
+function rememberNote(text){
+  text=(text||"").trim();
+  if(text.length<3) return;                       // ignore trivial fragments
+  let list=loadRecentNotes().filter(n=>n!==text); // de-dupe, move to front
+  list.unshift(text);
+  list=list.slice(0,12);                           // keep the last 12 distinct notes
+  try{ localStorage.setItem(recentNotesKey(),JSON.stringify(list)); }catch(e){}
+}
+function noteReuseChips(sci,noteEl,btn){
+  const list=loadRecentNotes();
+  if(!list.length) return '';
+  // build chips; click handler wired after insertion (see toggleDetail)
+  return '<div class="noteresue"><span class="rl">reuse</span>'
+    + list.map((n,i)=>'<button class="rchip" data-reuse="'+i+'" title="'+ae(n)+'">'+he(n.length>40?n.slice(0,38)+'…':n)+'</button>').join('')
+    + '</div>';
+}
 const meta=()=>({site:SITE,scheme:(PACK&&PACK.scheme)||"",vc:(PACK&&PACK.vice_county)||"",date:el('date').value,recorder:el('recorder').value,compartment:el('compartment').value.trim()||"—",weather:el('weather').value});
 
 function load(){
@@ -429,8 +495,11 @@ function save(){
   localStorage.setItem(extrasKey(),JSON.stringify(extras));
 }
 
-function comName(sci){const b=SPECIES.find(s=>s.sci===sci); if(b)return b.com;
-  return (window.extraCom&&window.extraCom[sci])|| (window.meta_byname&&window.meta_byname[sci.toLowerCase()]&&window.meta_byname[sci.toLowerCase()].v) || "";}
+function comName(sci){const b=SPECIES.find(s=>s.sci===sci); if(b&&b.com)return b.com;
+  return (window.extraCom&&window.extraCom[sci])
+       || (window.meta_byname&&window.meta_byname[sci.toLowerCase()]&&window.meta_byname[sci.toLowerCase()].v)
+       || (window.VERN&&window.VERN[sci])
+       || "";}
 function prevTag(sci){const b=SPECIES.find(s=>s.sci===sci);return b?b.prev:""}
 
 /* ===================== RENDER ===================== */
@@ -450,53 +519,97 @@ function badges(sci,st){
   return b;
 }
 
-function rowMatches(sci,st,q){
-  if(q){ const c=comName(sci); if(!(sci.toLowerCase().includes(q)||(c&&c.toLowerCase().includes(q)))) return false; }
-  if(filterMode==='all') return true;
+/* ---- composable filter predicates (scope AND status AND every active tag) ---- */
+function inScopeComp(sci,st,hereNames){
+  // species belongs to "this compartment" if its baseline history includes the
+  // selected compartment (by id or name), OR it has been recorded/added here today
+  const h=window.baseHist&&window.baseHist[sci];
+  const baselineHere = !!(h&&h.comps&&h.comps.some(c=>hereNames.indexOf(c)>=0));
+  const recordedHere = !!(st.daf||st.la||st.check||st.lat!=null);
+  const addedHere = !baseSet.has(sci);   // field-added species live in the current compartment
+  return baselineHere||recordedHere||addedHere;
+}
+function matchStatus(st){
+  if(statusMode==='all') return true;
   const recorded = st.daf||st.la||st.check||st.lat!=null;
-  if(filterMode==='tofind') return !recorded;
-  if(filterMode==='recorded') return recorded;
-  if(filterMode==='new') return !baseSet.has(sci);
-  if(filterMode==='notable') return !!notableOf(sci);
-  if(filterMode==='check') return !!st.check;
-  if(filterMode==='herebefore'){
+  return statusMode==='tofind' ? !recorded : recorded;
+}
+function matchTag(sci,st,tag,yrStart){
+  if(tag==='notable') return !!notableOf(sci);
+  if(tag==='new')     return !baseSet.has(sci);
+  if(tag==='check')   return !!st.check;
+  if(tag==='earlier'){
     const h=window.baseHist&&window.baseHist[sci];
-    if(!h||!h.comps) return false;
-    const cid=el('compartment').value.trim();
-    const cm=compMeta(cid);                       // resolve ID -> name
-    const names=[cid]; if(cm&&cm.name) names.push(cm.name);
-    return h.comps.some(c=>names.indexOf(c)>=0);  // strict: recorded in THIS compartment (by id or name)
+    return !!(h&&h.lastDate&&h.lastDate<yrStart);
   }
-  if(filterMode==='earlier'){
-    const h=window.baseHist&&window.baseHist[sci];
-    if(!h||!h.lastDate) return false;
-    return h.lastDate < (new Date().getFullYear()+"-01-01");  // last seen before current year
-  }
+  return true;
+}
+function matchTags(sci,st,yrStart){
+  for(const t of tagFilters){ if(!matchTag(sci,st,t,yrStart)) return false; }
+  return true;
+}
+function rowMatches(sci,st,q,hereNames,yrStart){
+  if(q){ const c=comName(sci); if(!(sci.toLowerCase().includes(q)||(c&&c.toLowerCase().includes(q)))) return false; }
+  if(scopeMode==='comp' && !inScopeComp(sci,st,hereNames)) return false;
+  if(!matchStatus(st)) return false;
+  if(!matchTags(sci,st,yrStart)) return false;
   return true;
 }
 
 function render(){
   const q=(el('filter').value||"").toLowerCase().trim();
   const tb=el('rows'); tb.innerHTML='';
-  let nRec=0,nFind=0,nNew=0,nNbl=0,nChk=0,nHere=0,nEarl=0;
   const cidNow=el('compartment').value.trim();
   const cmNow=compMeta(cidNow);
   const hereNames=[cidNow]; if(cmNow&&cmNow.name) hereNames.push(cmNow.name);
   const yrStart=(new Date().getFullYear()+"-01-01");
+
+  // ---- counts: each chip reflects ALL OTHER active filters (true "tap me" count) ----
+  // Scope chips: count under current status+tags, ignoring scope itself
+  let cScopeAll=0,cScopeComp=0;
+  // Status chips: count under current scope+tags, ignoring status itself
+  let cStatAll=0,cStatFind=0,cStatRec=0;
+  // Tag chips: count under current scope+status + OTHER active tags, ignoring this tag itself
+  let cTagNbl=0,cTagNew=0,cTagChk=0,cTagEarl=0;
+
+  function passTextScope(sci,st,scope){
+    if(q){ const c=comName(sci); if(!(sci.toLowerCase().includes(q)||(c&&c.toLowerCase().includes(q)))) return false; }
+    if(scope==='comp' && !inScopeComp(sci,st,hereNames)) return false;
+    return true;
+  }
+  function tagsExcept(sci,st,exclude){
+    for(const t of tagFilters){ if(t===exclude) continue; if(!matchTag(sci,st,t,yrStart)) return false; }
+    return true;
+  }
+
   order.forEach(sci=>{
     const st=state[sci];
+    // SCOPE counts: hold status+tags, vary scope
+    if(passTextScope(sci,st,'all')   && matchStatus(st) && matchTags(sci,st,yrStart)) cScopeAll++;
+    if(passTextScope(sci,st,'comp')  && matchStatus(st) && matchTags(sci,st,yrStart)) cScopeComp++;
+    // STATUS counts: hold scope+tags, vary status
+    if(passTextScope(sci,st,scopeMode) && matchTags(sci,st,yrStart)){
+      const recorded=st.daf||st.la||st.check||st.lat!=null;
+      cStatAll++; if(recorded)cStatRec++; else cStatFind++;
+    }
+    // TAG counts: hold scope+status + OTHER active tags, vary this tag
+    if(passTextScope(sci,st,scopeMode) && matchStatus(st)){
+      if(tagsExcept(sci,st,'notable') && matchTag(sci,st,'notable',yrStart)) cTagNbl++;
+      if(tagsExcept(sci,st,'new')     && matchTag(sci,st,'new',yrStart))     cTagNew++;
+      if(tagsExcept(sci,st,'check')   && matchTag(sci,st,'check',yrStart))   cTagChk++;
+      if(tagsExcept(sci,st,'earlier') && matchTag(sci,st,'earlier',yrStart)) cTagEarl++;
+    }
+  });
+
+  // ---- render the rows that pass the full combined filter ----
+  let shownRec=0, shownFind=0;
+  order.forEach(sci=>{
+    const st=state[sci];
+    if(!rowMatches(sci,st,q,hereNames,yrStart)) return;
     const recorded = st.daf||st.la||st.check||st.lat!=null;
-    if(recorded) nRec++; else nFind++;
-    if(!baseSet.has(sci)) nNew++;
-    if(notableOf(sci)) nNbl++;
-    if(st.check) nChk++;
-    const h=window.baseHist&&window.baseHist[sci];
-    if(h&&h.comps&&h.comps.some(c=>hereNames.indexOf(c)>=0)) nHere++;
-    if(h&&h.lastDate&&h.lastDate<yrStart) nEarl++;
-    if(!rowMatches(sci,st,q)) return;
+    if(recorded) shownRec++; else shownFind++;
     const com=comName(sci), pv=prevTag(sci);
     const isNew=!baseSet.has(sci);
-    const warn=(st.la&&!st.daf)?'':''; // reserved
     let cls=[]; if(isNew)cls.push('newrow');
     let cells='';
     DAF.forEach(d=>{cells+='<td class="cell"><div class="btn '+d+(st.daf===d?' on':'')+'" onclick="setDaf(\''+esc(sci)+'\',\''+d+'\')">'+d+'</div></td>';});
@@ -507,18 +620,45 @@ function render(){
     tr.innerHTML='<td class="sp"><div class="sci">'+he(sci)+'</div>'+(com?'<div class="com">'+he(com)+'</div>':'')+(pv?'<span class="prev">'+he(pv)+'</span>':'')+badges(sci,st)+'</td>'+cells;
     tb.appendChild(tr);
   });
-  setChip('all',order.length);setChip('tofind',nFind);setChip('recorded',nRec);setChip('new',nNew);setChip('notable',nNbl);setChip('check',nChk);setChip('herebefore',nHere);setChip('earlier',nEarl);
-  el('count').textContent=nRec+' recorded · '+nFind+' to find · '+nNew+' added · '+nNbl+' notable'+(surveyStart?(' · '+elapsedText()):'');
+
+  // ---- chip labels with context-aware counts ----
+  setChipText('scope','all',  'All site',cScopeAll);
+  setChipText('scope','comp', 'This compartment',cScopeComp);
+  setChipText('status','all', 'All',cStatAll);
+  setChipText('status','tofind','To find',cStatFind);
+  setChipText('status','recorded','Recorded',cStatRec);
+  setChipText('tag','notable','Notable',cTagNbl);
+  setChipText('tag','new','New',cTagNew);
+  setChipText('tag','check','Check ID',cTagChk);
+  setChipText('tag','earlier','Earlier yrs',cTagEarl);
+
+  const scopeLbl = scopeMode==='comp' ? ('this compartment ('+cidNow+')') : 'all site';
+  el('count').textContent=shownRec+' recorded · '+shownFind+' to find · showing '+scopeLbl+(surveyStart?(' · '+elapsedText()):'');
   updateSafeAgo();
 }
 
-function setChip(mode,n){const c=document.querySelector('.chip[data-mode="'+mode+'"]');if(!c)return;const lbl={all:'All',tofind:'To find',recorded:'Recorded',new:'New',notable:'Notable',check:'Check ID',herebefore:'Here before',earlier:'Earlier yrs'}[mode];c.textContent=lbl+' ('+n+')';}
-function setMode(m,btn){filterMode=m;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));btn.classList.add('on');render();}
+function setChipText(group,val,label,n){
+  const c=document.querySelector('.chip.'+group+'[data-'+group+'="'+val+'"]');
+  if(c) c.textContent=label+' ('+n+')';
+}
+
+function setScope(m,btn){scopeMode=m;document.querySelectorAll('.chip.scope').forEach(c=>c.classList.remove('on'));btn.classList.add('on');render();}
+function setStatus(m,btn){statusMode=m;document.querySelectorAll('.chip.status').forEach(c=>c.classList.remove('on'));btn.classList.add('on');render();}
+function toggleTag(t,btn){if(tagFilters.has(t)){tagFilters.delete(t);btn.classList.remove('on');}else{tagFilters.add(t);btn.classList.add('on');}render();}
+function clearFilters(){
+  scopeMode='all'; statusMode='all'; tagFilters.clear();
+  el('filter').value='';
+  document.querySelectorAll('.chip.scope').forEach(c=>c.classList.toggle('on',c.dataset.scope==='all'));
+  document.querySelectorAll('.chip.status').forEach(c=>c.classList.toggle('on',c.dataset.status==='all'));
+  document.querySelectorAll('.chip.tag').forEach(c=>c.classList.remove('on'));
+  render(); toast("Filters cleared");
+}
 function sortList(){order.sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));save();render();toast("Sorted A–Z");}
 
 /* ===================== DAFOR interactions ===================== */
-function setDaf(sci,d){markStart();const st=state[sci];st.daf=(st.daf===d)?null:d;save();render()}
-function toggleLa(sci){markStart();state[sci].la=!state[sci].la;save();render()}
+function stampRec(st){ if(!st.t) st.t=Date.now(); }   // first-recorded time, for effort span
+function setDaf(sci,d){markStart();const st=state[sci];st.daf=(st.daf===d)?null:d;if(st.daf)stampRec(st);save();render()}
+function toggleLa(sci){markStart();const st=state[sci];st.la=!st.la;if(st.la)stampRec(st);save();render()}
 
 function toggleDetail(btn,sci){
   const tr=btn.closest('tr');
@@ -530,6 +670,7 @@ function toggleDetail(btn,sci){
   const td=document.createElement('td');td.colSpan=8;
   td.innerHTML='<div class="dpanel">'
     +'<textarea class="dnote" placeholder="Note for '+he(sci)+'…">'+he(st.note||'')+'</textarea>'
+    +noteReuseChips(sci)
     +'<div class="dctl">'
     +'<button class="tgl'+(st.check?' on':'')+'" data-k="check">? Check ID</button>'
     +'<button class="tgl'+(st.veg?' on':'')+'" data-k="veg">Not in flower/fruit</button>'
@@ -543,6 +684,16 @@ function toggleDetail(btn,sci){
   dr.appendChild(td);tr.after(dr);
   const note=td.querySelector('.dnote');
   note.addEventListener('input',()=>{st.note=note.value;save();btn.classList.add('has');});
+  note.addEventListener('blur',()=>{ rememberNote(note.value); });   // bank the note for reuse
+  // reuse chips: tap to insert into the note box
+  const reuseList=loadRecentNotes();
+  td.querySelectorAll('.rchip').forEach(c=>c.addEventListener('click',()=>{
+    const i=+c.getAttribute('data-reuse');
+    const text=reuseList[i]||'';
+    // append to existing note (with separator) or set if empty
+    note.value = note.value.trim() ? (note.value.replace(/\s+$/,'')+' '+text) : text;
+    st.note=note.value; save(); btn.classList.add('has'); note.focus();
+  }));
   td.querySelectorAll('.tgl').forEach(b=>b.addEventListener('click',()=>{
     const k=b.getAttribute('data-k');
     if(k==='gps'){captureLoc(sci,b);return;}
@@ -575,7 +726,8 @@ function addFromBox(){
   state[sci]=newRec();
   if(!baseSet.has(sci)){
     const pm=window.meta_byname[sci.toLowerCase()];
-    window.extraCom=window.extraCom||{}; window.extraCom[sci]=(pm&&pm.v)||comName(sci)||"";
+    window.extraCom=window.extraCom||{};
+    window.extraCom[sci]=(pm&&pm.v)||(window.VERN&&window.VERN[sci])||comName(sci)||"";
   }
   // CHANGE: live notable flag for field-added species
   const nb=notableOf(sci);
@@ -786,7 +938,23 @@ function downloadFile(text,filename,mime){
 }
 
 /* ===================== FINISH / SUMMARY / BACKUP ===================== */
-function elapsedText(){if(!surveyStart)return "";const end=surveyEnd||Date.now();return fmtElapsed(end-surveyStart);}
+/* Effort metrics.
+   recordSpan() = first→last actual record timestamp — the defensible DAFOR effort
+   figure (can't be forgotten or left running). elapsedText() shows a live running
+   clock while surveying, then settles to the record-span once finished. */
+function recordSpan(){
+  let lo=null,hi=null;
+  order.forEach(s=>{const t=state[s]&&state[s].t; if(t){ if(lo==null||t<lo)lo=t; if(hi==null||t>hi)hi=t; }});
+  if(lo==null) return null;
+  return {lo:lo,hi:hi,ms:hi-lo,n:order.filter(s=>state[s]&&state[s].t).length};
+}
+function elapsedText(){
+  // while in progress: live clock from first interaction; once finished: record-span
+  if(surveyEnd){ const rs=recordSpan(); if(rs) return fmtElapsed(rs.ms); }
+  if(!surveyStart) return "";
+  const end=surveyEnd||Date.now();
+  return fmtElapsed(end-surveyStart);
+}
 function fmtElapsed(ms){const mins=Math.round(ms/60000);const h=Math.floor(mins/60),mm=mins%60;return (h?h+"h ":"")+mm+"m";}
 function toggleCompNotes(){const w=el('cnotewrap');const show=(w.style.display==='none'||!w.style.display);w.style.display=show?'block':'none';if(show)el('compnotes').focus();}
 function toggleKey(){const p=el('keypanel'),b=el('keytoggle');const show=!p.classList.contains('show');p.classList.toggle('show',show);b.classList.toggle('on',show);b.setAttribute('aria-expanded',show?'true':'false');}
@@ -795,12 +963,22 @@ function finishSurvey(){
   if(!surveyEnd){surveyEnd=Date.now();save();}
   const rows=recordedRows();
   const nbl=rows.filter(r=>notableOf(r.sci));
+  const rs=recordSpan();
   el('fcomp').textContent=el('compartment').value||"—";
+  let effortLine='';
+  if(rs){
+    const span=fmtElapsed(rs.ms);
+    const t0=new Date(rs.lo), t1=new Date(rs.hi);
+    const hhmm=d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    effortLine='Recording effort: <b>'+span+'</b> <span style="color:#7c8a80">('+hhmm(t0)+'–'+hhmm(t1)+', '+rs.n+' records)</span><br>';
+  } else {
+    effortLine='Recording effort: <b>—</b><br>';
+  }
   el('fbody').innerHTML=
     '<b>'+rows.length+'</b> taxa recorded · <b>'+nbl.length+'</b> notable<br>'
-    +'Duration: <b>'+(elapsedText()||'—')+'</b><br>'
+    +effortLine
     +(nbl.length?('<div style="margin-top:8px">◆ '+nbl.map(r=>he(r.sci)).join('<br>◆ ')+'</div>'):'')
-    +'<div style="margin-top:10px;color:#5a4a00">📍 Stop route recording in the OS Maps app, then Export GPX for the traverse line.</div>';
+    +'<div style="margin-top:10px;color:#5a4a00">📍 Stop route recording in the OS Maps app, then Export GPX for the traverse line. The GPX span is your route-duration cross-check.</div>';
   el('finishmodal').style.display='flex';
 }
 
@@ -874,15 +1052,26 @@ function selAll(){const a=el('textarea');a.focus();a.select();try{a.setSelection
 function renderSuggest(){
   const box=el('suggest');const v=el('addbox').value.trim().toLowerCase();
   if(v.length<2){box.style.display='none';return;}
-  const out=[];
-  for(let i=0;i<PICK.length&&out.length<40;i++){
+  const hits=[];
+  for(let i=0;i<PICK.length;i++){
     const p=PICK[i];const n=p.n.toLowerCase();
-    if(n.includes(v)||(p.v&&p.v.toLowerCase().includes(v))){
-      const acc=SYN[p.n]; // if this pick name is a synonym, show its accepted target
-      out.push({n:p.n,v:p.v,syn:acc&&acc!==p.n?acc:""});
-    }
+    const nameHit=n.includes(v);
+    const vernHit=p.v&&p.v.toLowerCase().includes(v);
+    if(!nameHit&&!vernHit) continue;
+    // score: lower is better. Prefix match on scientific name beats mid-string;
+    // shorter names (the bare species) beat longer (its var./subsp.); name beats vern-only.
+    let score=100;
+    if(nameHit){ score = n.startsWith(v) ? 0 : 10; }
+    else if(vernHit){ const pv=p.v.toLowerCase(); score = pv.startsWith(v) ? 20 : 30; }
+    // infraspecific / hybrid penalty so the species line sits above its segregates
+    if(/ (subsp|var|f)\.| x |=/.test(n)) score += 5;
+    score += Math.min(n.length, 40) / 100;     // gentle length tie-breaker
+    const acc=SYN[p.n];
+    hits.push({n:p.n, v:p.v, syn:acc&&acc!==p.n?acc:"", _s:score});
   }
-  if(!out.length){box.style.display='none';return;}
+  if(!hits.length){box.style.display='none';return;}
+  hits.sort((a,b)=>a._s-b._s||a.n.length-b.n.length||a.n.localeCompare(b.n));
+  const out=hits.slice(0,40);
   box.innerHTML=out.map(p=>'<div class="s" data-n="'+ae(p.n)+'"><i>'+he(p.n)+'</i>'+(p.v?'<span class="v">'+he(p.v)+'</span>':'')+(p.syn?'<span class="syn">→ '+he(p.syn)+'</span>':'')+'</div>').join('');
   positionSuggest();box.style.display='block';
 }
