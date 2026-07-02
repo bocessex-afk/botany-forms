@@ -1,5 +1,5 @@
 // Bump CACHE (e.g. botany-v1 -> botany-v2) whenever you change any file, so devices fetch the new copy.
-const CACHE = 'botany-v9';
+const CACHE = 'botany-v11';
 const CORE  = ['.', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 const FORMS = ['dafor.html', 'nvc.html', 'monad.html', 'monadmap.html'];
 

@@ -15,7 +15,7 @@
   :root{ --d:#14532d; --a:#15803d; --f:#4d9c5a; --o:#a7d8ae; --r:#dcefe0; --la:#f4b400; --ink:#1b2a23; --line:#cdd6cf; --bg:#f4f7f4; --new:#e8f1dc; }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px}
-  header{position:sticky;top:0;z-index:30;background:#1f3b2c;color:#fff;padding:calc(8px + env(safe-area-inset-top)) 10px 10px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  header{position:relative;z-index:30;background:#1f3b2c;color:#fff;padding:calc(8px + env(safe-area-inset-top)) 10px 10px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
   h1{margin:0 0 6px;font-size:18px;letter-spacing:.2px}
   .dhome{flex:none;background:rgba(255,255,255,.18);color:#fff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:700;padding:6px 10px}
   .meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:flex-end}
@@ -29,10 +29,16 @@
   .bar button.fin{background:#2f6b3d;color:#fff}
   .bar button.warn{background:#f3c9c2;color:#5a1c12}
   .count{font-size:12px;opacity:.95;margin-top:6px}
-  .search{padding:8px 10px 4px;background:var(--bg)}
-  .search input{width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:9px}
+  .search{padding:8px 10px 4px;background:var(--bg);position:relative}
+  .search input{width:100%;font-size:16px;padding:10px 40px 10px 12px;border:1px solid var(--line);border-radius:9px}
+  .filterx{position:absolute;right:16px;top:8px;bottom:4px;display:none;align-items:center;border:none;background:transparent;color:#8a978d;font-size:18px;font-weight:800;padding:0 6px;cursor:pointer}
+  .filterx.show{display:flex}
   /* sticky three-tier filter block: search + scope + status + tags all stay put */
-  #filterblock{position:sticky;top:0;z-index:22;background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 2px 5px rgba(0,0,0,.05)}
+  #filterblock{position:sticky;top:env(safe-area-inset-top,0px);z-index:22;background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 2px 5px rgba(0,0,0,.05)}
+  .filtoggle{display:flex;align-items:center;gap:8px;padding:2px 10px 0}
+  #filtToggle{flex:none;background:#e6efe8;color:#1f3b2c;border:none;border-radius:8px;padding:6px 12px;font-size:14px;font-weight:700}
+  .filtsum{font-size:12px;color:#5a6a60;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #chiprows.collapsed{display:none}
   .chiprow{display:flex;gap:6px;padding:4px 10px;flex-wrap:wrap;align-items:center}
   .chiprow:last-child{padding-bottom:8px}
   .grouplbl{flex:none;font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#7c8a80;min-width:46px}
@@ -141,6 +147,17 @@
   #importscreen .resume{margin-top:18px;font-size:13px;color:#33493a}
   #importscreen .resume b{color:var(--d)}
   #pickfile{display:none}
+  /* ---- field lock (ported from monad form) ---- */
+  .lock{flex:none;font-size:15px;font-weight:800;padding:8px 12px;border:none;border-radius:9px;color:#fff;background:#456}
+  #lockOverlay{display:none;position:fixed;inset:0;z-index:80;background:rgba(15,30,20,.94);align-items:center;justify-content:center;color:#fff;padding:24px}
+  .lockcard{text-align:center;max-width:330px}
+  .lockicon{font-size:46px;line-height:1}
+  .locktitle{font-size:22px;font-weight:800;margin-top:6px}
+  .locksub{font-size:14px;color:#bfe0c8;margin-top:6px}
+  .lockhint{font-size:12px;color:#9bc4a6;margin-top:18px;line-height:1.45}
+  .holdwrap{position:relative;margin:22px auto 0;height:64px;max-width:300px;border-radius:14px;border:2px solid #5f9d70;background:rgba(255,255,255,.08);overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;user-select:none}
+  .holdfill{position:absolute;left:0;top:0;bottom:0;width:0;background:#2f6b3d}
+  .holdlabel{position:relative;z-index:1;font-size:17px;font-weight:800}
 </style>
 </head>
 <body>
@@ -150,7 +167,7 @@
   <a href="index.html" class="dhome" style="position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px">‹ Home</a>
   <div class="card">
     <h1>DAFOR Survey</h1>
-    <div style="font-size:12px;color:#9aa8a0;margin:-2px 0 10px">build 2026-06-30 · importer v14</div>
+    <div style="font-size:12px;color:#9aa8a0;margin:-2px 0 10px">build 2026-07-02 · importer v16</div>
     <p>Load a site pack to begin. The pack carries the site’s species baseline, compartments, notable list and the full county checklist — everything works offline once loaded.</p>
     <button class="imp" onclick="document.getElementById('pickfile').click()">📂 Load site pack…</button>
     <button class="sub" id="resumeBtn" style="display:none" onclick="resumeLast()">↩︎ Resume last site</button>
@@ -173,10 +190,10 @@
   <div class="bar">
     <button class="fin" onclick="finishSurvey()" title="Finish: summary + notable list, and a reminder to stop OS route logging">✓ Finish</button>
     <button onclick="showHelp()" title="What each button does + the survey workflow">ⓘ Help</button>
-    <button onclick="sortList()" title="Sort the species list alphabetically">⇅ Sort A–Z</button>
-    <button onclick="exportCSV()" title="Download the 24-column master CSV straight to Files">⬇ Export</button>
-    <button onclick="shareCSV()" title="Share the master CSV via the iOS share sheet (Drive, AirDrop, Mail…)">📤 Share</button>
-    <button onclick="shareGeoJSON()" title="Export located records (with 📍 GPS) as GeoJSON points for ArcGIS">📍 Points</button>
+    <button class="lock" id="lockBtn" title="Lock the screen so taps are ignored while walking between records — hold to unlock">🔒 Lock</button>
+    <button onclick="cycleSort()" id="sortBtn" title="Sort the species list — tap to cycle A–Z / DAFOR (highest first)">⇅ Sort A–Z</button>
+    <button onclick="exportCSV()" title="Download the master CSV (+ a points file if any records have a 📍 fix) — you can edit the filename first">⬇ Export</button>
+    <button onclick="shareExport()" title="Share via the iOS share sheet — bundles the master CSV and the located-points GeoJSON together (Drive, AirDrop, Mail…)">📤 Share</button>
     <button onclick="copySummary()" title="Copy a plain-text summary of this compartment to the clipboard">⧉ Copy</button>
     <button onclick="backup()" title="Save the full survey state to a JSON file — a lossless recovery point">💾 Backup</button>
     <button onclick="document.getElementById('restoreFile').click()" title="Reload a saved backup JSON (load the matching site pack first)">⤒ Restore</button>
@@ -188,6 +205,16 @@
   <div class="count" id="count">—</div>
   <div class="count" id="savedAgo" style="display:none"></div>
 </header>
+
+<div id="lockOverlay">
+  <div class="lockcard">
+    <div class="lockicon">🔒</div>
+    <div class="locktitle">Locked</div>
+    <div class="locksub" id="lockCounts"></div>
+    <div class="lockhint">Taps are ignored while locked — safe to pocket between records.</div>
+    <div class="holdwrap" id="holdWrap"><div class="holdfill" id="holdFill"></div><div class="holdlabel">Hold to unlock</div></div>
+  </div>
+</div>
 
 <div id="helpPanel" style="display:none;position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.45);padding:18px;overflow:auto">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.3)">
@@ -208,7 +235,9 @@
 })();
 </script>
 <div id="filterblock">
-<div class="search"><input id="filter" placeholder="🔍 Filter species (name or common)…" autocomplete="off"></div>
+<div class="search"><input id="filter" placeholder="🔍 Filter species (name or common)…" autocomplete="off"><button id="filterX" class="filterx" title="Clear the search text only (keeps scope/status/tag filters)" onclick="clearSearchText()">✕</button></div>
+<div class="filtoggle"><button id="filtToggle" onclick="toggleFilters()" aria-expanded="true" title="Show or hide the filter chips">Filters ▾</button><span id="filtSummary" class="filtsum"></span></div>
+<div id="chiprows">
 <div class="chiprow">
   <span class="grouplbl">Scope</span>
   <button class="chip scope on" data-scope="all" onclick="setScope('all',this)">All site</button>
@@ -227,6 +256,7 @@
   <button class="chip tag" data-tag="new" onclick="toggleTag('new',this)">New</button>
   <button class="chip tag" data-tag="check" onclick="toggleTag('check',this)">Check ID</button>
   <button class="chip tag" data-tag="earlier" onclick="toggleTag('earlier',this)">Earlier yrs</button>
+</div>
 </div>
 </div>
 <div id="cnotewrap" style="display:none"><textarea id="compnotes" placeholder="Compartment notes / management recommendations…"></textarea></div>
@@ -382,7 +412,7 @@ function applyPack(pack){
   // pick-name index for add box
   window.meta_byname={}; PICK.forEach(p=>window.meta_byname[p.n.toLowerCase()]=p);
   el('siteTitle').textContent = SITE+" · DAFOR survey ("+(pack.vice_county||"VC?")+")";
-  el('buildstamp').textContent = "Build 2026-06-30 · importer v14 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
+  el('buildstamp').textContent = "Build 2026-07-02 · importer v16 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
   if(!el('date').value){ el('date').value=new Date().toISOString().slice(0,10); }
   // persist for resume
   try{ localStorage.setItem(LASTKEY, JSON.stringify(pack)); }catch(e){}
@@ -635,6 +665,7 @@ function render(){
   const scopeLbl = scopeMode==='comp' ? ('this compartment ('+cidNow+')') : 'all site';
   el('count').textContent=shownRec+' recorded · '+shownFind+' to find · showing '+scopeLbl+(surveyStart?(' · '+elapsedText()):'');
   updateSafeAgo();
+  updateFiltSummary();
 }
 
 function setChipText(group,val,label,n){
@@ -652,8 +683,85 @@ function clearFilters(){
   document.querySelectorAll('.chip.status').forEach(c=>c.classList.toggle('on',c.dataset.status==='all'));
   document.querySelectorAll('.chip.tag').forEach(c=>c.classList.remove('on'));
   render(); toast("Filters cleared");
+  toggleFilterX();
 }
-function sortList(){order.sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));save();render();toast("Sorted A–Z");}
+function toggleFilterX(){ const x=el('filterX'); if(x) x.classList.toggle('show', !!el('filter').value); }
+function clearSearchText(){ el('filter').value=''; toggleFilterX(); render(); el('filter').focus(); }
+
+/* ---- collapsible filter chips (A4) ---- */
+function toggleFilters(){
+  const cr=el('chiprows'), t=el('filtToggle'); if(!cr||!t) return;
+  const collapsed=cr.classList.toggle('collapsed');
+  t.textContent = collapsed ? 'Filters ▸' : 'Filters ▾';
+  t.setAttribute('aria-expanded', String(!collapsed));
+  try{ localStorage.setItem('dafor_filters_collapsed', collapsed?'1':'0'); }catch(e){}
+  updateFiltSummary();
+}
+function updateFiltSummary(){
+  const s=el('filtSummary'); if(!s) return;
+  const parts=[];
+  if(scopeMode==='comp') parts.push('This compartment');
+  if(statusMode==='tofind') parts.push('To find'); else if(statusMode==='recorded') parts.push('Recorded');
+  const lbl={notable:'Notable',new:'New',check:'Check ID',earlier:'Earlier yrs'};
+  tagFilters.forEach(t=>parts.push(lbl[t]||t));
+  const cr=el('chiprows'); const collapsed=cr&&cr.classList.contains('collapsed');
+  // summary shows only when collapsed — when open, the chips already show state
+  s.textContent = collapsed ? (parts.length ? parts.join(' · ') : 'none') : '';
+}
+function initFilters(){
+  let collapsed=false;
+  try{ collapsed = localStorage.getItem('dafor_filters_collapsed')==='1'; }catch(e){}
+  const cr=el('chiprows'), t=el('filtToggle');
+  if(cr&&collapsed) cr.classList.add('collapsed');
+  if(t){ t.textContent = collapsed ? 'Filters ▸' : 'Filters ▾'; t.setAttribute('aria-expanded', String(!collapsed)); }
+  updateFiltSummary();
+}
+
+let sortMode='az';
+function applySort(){
+  if(sortMode==='dafor'){
+    const rk={D:5,A:4,F:3,O:2,R:1};
+    order.sort((a,b)=>{
+      const ra=rk[(state[a]&&state[a].daf)||'']||0, rb=rk[(state[b]&&state[b].daf)||'']||0;
+      if(rb!==ra) return rb-ra;
+      return a.toLowerCase().localeCompare(b.toLowerCase());
+    });
+  } else { order.sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase())); }
+  save(); render();
+}
+function cycleSort(){
+  sortMode=(sortMode==='az')?'dafor':'az';
+  applySort();
+  const b=el('sortBtn'); if(b) b.textContent = sortMode==='az' ? '⇅ Sort A–Z' : '⇅ Sort DAFOR';
+  toast(sortMode==='az' ? 'Sorted A–Z' : 'Sorted by DAFOR (highest first)');
+}
+function sortList(){ sortMode='az'; applySort(); toast("Sorted A–Z"); }
+
+/* ---- field lock (ported from monad form) — hold 1.4 s to unlock ---- */
+var HOLD=1400, holdRAF=0, holdT0=0;
+function lockRecCount(){ let n=0; order.forEach(sci=>{const st=state[sci]; if(st.daf||st.la||st.check||st.lat!=null) n++;}); return n; }
+function doLock(){
+  const rec=lockRecCount(), tot=order.length;
+  el('lockCounts').textContent = rec+" recorded · "+(tot-rec)+" to find";
+  el('lockOverlay').style.display="flex";
+}
+function doUnlock(){ el('lockOverlay').style.display="none"; }
+function cancelHold(){ if(holdRAF)cancelAnimationFrame(holdRAF); holdRAF=0; holdT0=0; const f=el('holdFill'); if(f)f.style.width="0"; }
+function holdStart(e){ e.preventDefault(); holdT0=Date.now();
+  var step=()=>{ var p=Math.min(1,(Date.now()-holdT0)/HOLD); el('holdFill').style.width=(p*100)+"%"; if(p>=1){ cancelHold(); doUnlock(); } else { holdRAF=requestAnimationFrame(step); } };
+  holdRAF=requestAnimationFrame(step);
+}
+(function wireLock(){
+  const b=el('lockBtn'); if(b) b.onclick=doLock;
+  const w=el('holdWrap'); if(w){
+    w.addEventListener("touchstart",holdStart,{passive:false});
+    w.addEventListener("touchend",cancelHold);
+    w.addEventListener("touchcancel",cancelHold);
+    w.addEventListener("mousedown",holdStart);
+    w.addEventListener("mouseup",cancelHold);
+    w.addEventListener("mouseleave",cancelHold);
+  }
+})();
 
 /* ===================== DAFOR interactions ===================== */
 function stampRec(st){ if(!st.t) st.t=Date.now(); }   // first-recorded time, for effort span
@@ -720,7 +828,7 @@ function addFromBox(){
   el('suggest').style.display='none';
   const sci=resolveAccepted(raw);                 // CHANGE: resolve synonym -> accepted
   const existing=order.find(s=>norm(s)===norm(sci));
-  if(existing){ toast(sci+" already in list"); el('addbox').value=''; flashRow(existing); return; }
+  if(existing){ toast(sci+" already in list"); el('addbox').value=''; flashRow(existing,true); return; }
   if(raw!==sci){ toast('“'+raw+'” → '+sci); }      // tell the recorder we resolved a synonym
   order.push(sci);
   state[sci]=newRec();
@@ -731,18 +839,24 @@ function addFromBox(){
   }
   // CHANGE: live notable flag for field-added species
   const nb=notableOf(sci);
-  save(); render(); el('addbox').value='';
-  flashRow(sci);
+  save(); render(); el('addbox').value=''; el('addbox').focus();
+  flashRow(sci,false);
   if(nb){ toast("◆ "+sci+" — "+nb); }
   else { toast("Added "+sci); }
 }
-function flashRow(sci){
-  // ensure visible then scroll to it
-  setTimeout(()=>{
+function flashRow(sci, doScroll){
+  // flash the row; only scroll to it when asked (and only if off-screen), so a
+  // fresh add doesn't yank the view away from the add box during rapid entry.
+  requestAnimationFrame(()=>{
     const rows=[...document.querySelectorAll('#rows tr')];
     const r=rows.find(tr=>tr.querySelector('.sci')&&tr.querySelector('.sci').textContent===sci);
-    if(r){ r.scrollIntoView({behavior:'smooth',block:'center'}); r.style.transition='background .1s'; const o=r.style.background; r.style.background='#fff6cc'; setTimeout(()=>r.style.background=o,900); }
-  },40);
+    if(!r) return;
+    if(doScroll){
+      const rect=r.getBoundingClientRect(), vh=window.innerHeight||document.documentElement.clientHeight;
+      if(rect.top<70 || rect.bottom>vh-20) r.scrollIntoView({behavior:'auto',block:'center'});
+    }
+    r.style.transition='background .1s'; const o=r.style.background; r.style.background='#fff6cc'; setTimeout(()=>r.style.background=o,900);
+  });
 }
 
 /* ===================== RECORDS -> 24-COLUMN MASTER SCHEMA ===================== */
@@ -847,35 +961,44 @@ function buildCSVText(){
 }
 function csvFilename(){ const m=meta(); return (SITE+" "+m.compartment+" "+m.date).replace(/[^\w]+/g,"_")+"_master.csv"; }
 
+function csvBase(){ return csvFilename().replace(/_master\.csv$/,"").replace(/\.csv$/,""); }
+function promptBase(){
+  const v=prompt("Filename for export (the _master.csv / _points.geojson suffix is added automatically):", csvBase());
+  if(v===null) return null;                       // cancelled
+  return (v.trim().replace(/[^\w\-]+/g,"_")) || csvBase();
+}
+
+/* One-tap export. Direct download = CSV (a 2nd programmatic download is unreliable on
+   iOS Safari, so points go via Share). Editable filename. */
 function exportCSV(){
   const csv=buildCSVText();
   if(!csv){toast("No records yet");return;}
-  downloadFile(csv,csvFilename(),"text/csv;charset=utf-8");   // direct download
+  const base=promptBase(); if(base===null) return;
+  downloadFile(csv, base+"_master.csv", "text/csv;charset=utf-8");
+  if(buildGeoJSON()) setTimeout(()=>toast("📍 located records present — use 📤 Share to include the points file"), 1000);
   markSafe();
 }
 
-/* Share via the OS share sheet — lets you pick Save to Drive / AirDrop / email.
-   Deliberate, button-triggered, so it won't cause the duplicate "text" file that
-   came from auto-running share + download together. */
-async function shareCSV(){
+/* Share via the OS share sheet — bundles CSV + located points in ONE sheet.
+   No BOM on the share path (avoids the iOS companion .txt). Button-triggered only. */
+async function shareExport(){
   const csv=buildCSVText();
   if(!csv){toast("No records yet");return;}
-  const fn=csvFilename();
-  const blob=new Blob([csv],{type:"text/csv"});   // no BOM on share path — avoids iOS companion .txt
-  // Preferred: native file share (iOS shows Drive, AirDrop, Mail, etc.)
+  const base=promptBase(); if(base===null) return;
+  const files=[ new File([new Blob([csv],{type:"text/csv"})], base+"_master.csv", {type:"text/csv"}) ];
+  const gj=buildGeoJSON();
+  if(gj) files.push(new File([new Blob([gj],{type:"application/geo+json"})], base+"_points.geojson", {type:"application/geo+json"}));
   if(navigator.canShare){
     try{
-      const f=new File([blob],fn,{type:"text/csv"});
-      if(navigator.canShare({files:[f]})){
-        await navigator.share({files:[f],title:fn});
-        toast("Shared "+fn);
-        markSafe();
-        return;
+      if(navigator.canShare({files})){
+        await navigator.share({files, title:base});
+        toast(gj?"Shared CSV + points":"Shared "+base+"_master.csv");
+        markSafe(); return;
       }
-    }catch(e){ if(e && e.name==='AbortError'){return;} /* user cancelled — do nothing */ }
+    }catch(e){ if(e && e.name==='AbortError'){return;} }
   }
-  // Fallback: no file-share support — download instead
-  downloadFile(csv,fn,"text/csv;charset=utf-8");
+  downloadFile(csv, base+"_master.csv","text/csv;charset=utf-8");
+  if(gj) downloadFile(gj, base+"_points.geojson","application/geo+json");
   toast("Sharing unavailable — saved to Files instead");
   markSafe();
 }
@@ -1089,10 +1212,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   window.addEventListener("pagehide",_daforFlush);
   window.addEventListener("beforeunload",_daforFlush);
   ['recorder','weather','date'].forEach(id=>el(id).addEventListener('change',save));
-  el('filter').addEventListener('input',render);
+  el('filter').addEventListener('input',()=>{toggleFilterX();render();});
   el('addbox').addEventListener('input',renderSuggest);
   el('addbox').addEventListener('keydown',e=>{if(e.key==='Enter')addFromBox()});
   el('suggest').addEventListener('click',e=>{const d=e.target.closest('[data-n]');if(!d)return;el('addbox').value=d.getAttribute('data-n');el('suggest').style.display='none';addFromBox();});
+  initFilters();
 });
 </script>
 </body>
