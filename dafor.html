@@ -167,7 +167,7 @@
   <a href="index.html" class="dhome" style="position:absolute;top:calc(12px + env(safe-area-inset-top));left:12px">‹ Home</a>
   <div class="card">
     <h1>DAFOR Survey</h1>
-    <div style="font-size:12px;color:#9aa8a0;margin:-2px 0 10px">build 2026-07-02 · importer v16</div>
+    <div style="font-size:12px;color:#9aa8a0;margin:-2px 0 10px">build 2026-07-14 · importer v18</div>
     <p>Load a site pack to begin. The pack carries the site’s species baseline, compartments, notable list and the full county checklist — everything works offline once loaded.</p>
     <button class="imp" onclick="document.getElementById('pickfile').click()">📂 Load site pack…</button>
     <button class="sub" id="resumeBtn" style="display:none" onclick="resumeLast()">↩︎ Resume last site</button>
@@ -315,6 +315,7 @@ let surveyStart=null, surveyEnd=null;
 let scopeMode='all';        // 'all' | 'comp'  (spatial scope)
 let statusMode='all';       // 'all' | 'tofind' | 'recorded'
 let tagFilters=new Set();   // any of: 'notable','new','check','earlier' (multi-select)
+let stickySci=null;         // #7: pin a just-scored row so it doesn't vanish from "To find" before LA is set
 const DAF=['D','A','F','O','R'];
 const LASTKEY="dafor::lastpack";   // stores last pack JSON for resume
 
@@ -370,11 +371,12 @@ function applyPack(pack){
   PACK=pack;
   SITE = pack.site||"—";
   COMPS = (pack.compartments||[]).map(c=>c.id);
-  // baseline -> SPECIES (sci/com/prev). prev carries last_date + which compartments.
+  const cnm={}; (pack.compartments||[]).forEach(c=>{ cnm[c.id]=c.name||c.id; });  // id -> name for display
+  // baseline -> SPECIES (sci/com/prev). prev carries last_date + which compartments (by name).
   SPECIES = (pack.baseline||[]).map(b=>({
     sci:b.taxon, com:b.vernacular||"",
     comps:(b.compartments||[]), lastDate:(b.last_date||""),
-    prev: (b.last_date?("seen "+b.last_date):"") + (b.compartments&&b.compartments.length?("  ["+b.compartments.join(", ")+"]"):"")
+    prev: (b.last_date?("seen "+b.last_date):"") + (b.compartments&&b.compartments.length?("  ["+b.compartments.map(id=>cnm[id]||id).join(", ")+"]"):"")
   }));
   // lookup: taxon -> {comps, lastDate} for the history filters
   window.baseHist={}; SPECIES.forEach(s=>{ window.baseHist[s.sci]={comps:s.comps,lastDate:s.lastDate}; });
@@ -406,13 +408,13 @@ function applyPack(pack){
   const sel=el('compartment'); sel.innerHTML='';
   (pack.compartments||[]).forEach(c=>{
     const o=document.createElement('option');
-    o.value=c.id; o.textContent=c.name?(c.id+" — "+c.name):c.id;
+    o.value=c.id; o.textContent=c.name||c.id;
     sel.appendChild(o);
   });
   // pick-name index for add box
   window.meta_byname={}; PICK.forEach(p=>window.meta_byname[p.n.toLowerCase()]=p);
   el('siteTitle').textContent = SITE+" · DAFOR survey ("+(pack.vice_county||"VC?")+")";
-  el('buildstamp').textContent = "Build 2026-07-02 · importer v16 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
+  el('buildstamp').textContent = "Build 2026-07-14 · importer v18 · "+SITE+" · seed:"+(pack.seed||"all")+" · "+(SPECIES.length)+" baseline";
   if(!el('date').value){ el('date').value=new Date().toISOString().slice(0,10); }
   // persist for resume
   try{ localStorage.setItem(LASTKEY, JSON.stringify(pack)); }catch(e){}
@@ -581,7 +583,7 @@ function matchTags(sci,st,yrStart){
 function rowMatches(sci,st,q,hereNames,yrStart){
   if(q){ const c=comName(sci); if(!(sci.toLowerCase().includes(q)||(c&&c.toLowerCase().includes(q)))) return false; }
   if(scopeMode==='comp' && !inScopeComp(sci,st,hereNames)) return false;
-  if(!matchStatus(st)) return false;
+  if(sci!==stickySci && !matchStatus(st)) return false;   // #7: sticky row bypasses status (stays visible to add LA)
   if(!matchTags(sci,st,yrStart)) return false;
   return true;
 }
@@ -673,11 +675,11 @@ function setChipText(group,val,label,n){
   if(c) c.textContent=label+' ('+n+')';
 }
 
-function setScope(m,btn){scopeMode=m;document.querySelectorAll('.chip.scope').forEach(c=>c.classList.remove('on'));btn.classList.add('on');render();}
-function setStatus(m,btn){statusMode=m;document.querySelectorAll('.chip.status').forEach(c=>c.classList.remove('on'));btn.classList.add('on');render();}
-function toggleTag(t,btn){if(tagFilters.has(t)){tagFilters.delete(t);btn.classList.remove('on');}else{tagFilters.add(t);btn.classList.add('on');}render();}
+function setScope(m,btn){stickySci=null;scopeMode=m;document.querySelectorAll('.chip.scope').forEach(c=>c.classList.remove('on'));btn.classList.add('on');render();}
+function setStatus(m,btn){stickySci=null;statusMode=m;document.querySelectorAll('.chip.status').forEach(c=>c.classList.remove('on'));btn.classList.add('on');render();}
+function toggleTag(t,btn){stickySci=null;if(tagFilters.has(t)){tagFilters.delete(t);btn.classList.remove('on');}else{tagFilters.add(t);btn.classList.add('on');}render();}
 function clearFilters(){
-  scopeMode='all'; statusMode='all'; tagFilters.clear();
+  scopeMode='all'; statusMode='all'; tagFilters.clear(); stickySci=null;
   el('filter').value='';
   document.querySelectorAll('.chip.scope').forEach(c=>c.classList.toggle('on',c.dataset.scope==='all'));
   document.querySelectorAll('.chip.status').forEach(c=>c.classList.toggle('on',c.dataset.status==='all'));
@@ -765,8 +767,8 @@ function holdStart(e){ e.preventDefault(); holdT0=Date.now();
 
 /* ===================== DAFOR interactions ===================== */
 function stampRec(st){ if(!st.t) st.t=Date.now(); }   // first-recorded time, for effort span
-function setDaf(sci,d){markStart();const st=state[sci];st.daf=(st.daf===d)?null:d;if(st.daf)stampRec(st);save();render()}
-function toggleLa(sci){markStart();const st=state[sci];st.la=!st.la;if(st.la)stampRec(st);save();render()}
+function setDaf(sci,d){markStart();const st=state[sci];st.daf=(st.daf===d)?null:d;if(st.daf)stampRec(st);if(statusMode==='tofind')stickySci=sci;save();render()}
+function toggleLa(sci){markStart();const st=state[sci];st.la=!st.la;if(st.la)stampRec(st);if(statusMode==='tofind')stickySci=sci;save();render()}
 
 function toggleDetail(btn,sci){
   const tr=btn.closest('tr');
@@ -839,7 +841,7 @@ function addFromBox(){
   }
   // CHANGE: live notable flag for field-added species
   const nb=notableOf(sci);
-  save(); render(); el('addbox').value=''; el('addbox').focus();
+  stickySci=null; save(); render(); el('addbox').value=''; el('addbox').focus();
   flashRow(sci,false);
   if(nb){ toast("◆ "+sci+" — "+nb); }
   else { toast("Added "+sci); }
@@ -926,8 +928,8 @@ function buildMasterRows(){
       r.sci,                       // Taxon
       comName(r.sci),              // Vernacular
       SITE,                        // Site
-      cid,                         // Compartment
-      cm.name||cid,                // compartment_as_recorded
+      cm.name||cid,                // Compartment (name — matches the master's compartment convention)
+      cid,                         // compartment_as_recorded (pack ID, kept for traceability/joins)
       cm.recording_tier||"compartment", // recording_tier
       cm.grid_ref||"",             // Grid ref
       dmy,                         // Date (DD/MM/YYYY)
@@ -959,7 +961,7 @@ function buildCSVText(){
   rows.forEach(r=>{ csv+=r.map(q).join(",")+"\n"; });
   return csv;
 }
-function csvFilename(){ const m=meta(); return (SITE+" "+m.compartment+" "+m.date).replace(/[^\w]+/g,"_")+"_master.csv"; }
+function csvFilename(){ const m=meta(); const cn=compMeta(el('compartment').value.trim()).name||m.compartment; return (SITE+" "+cn+" "+m.date).replace(/[^\w]+/g,"_")+"_master.csv"; }
 
 function csvBase(){ return csvFilename().replace(/_master\.csv$/,"").replace(/\.csv$/,""); }
 function promptBase(){
@@ -1087,7 +1089,7 @@ function finishSurvey(){
   const rows=recordedRows();
   const nbl=rows.filter(r=>notableOf(r.sci));
   const rs=recordSpan();
-  el('fcomp').textContent=el('compartment').value||"—";
+  el('fcomp').textContent=compMeta(el('compartment').value.trim()).name||el('compartment').value||"—";
   let effortLine='';
   if(rs){
     const span=fmtElapsed(rs.ms);
@@ -1100,7 +1102,7 @@ function finishSurvey(){
   el('fbody').innerHTML=
     '<b>'+rows.length+'</b> taxa recorded · <b>'+nbl.length+'</b> notable<br>'
     +effortLine
-    +(nbl.length?('<div style="margin-top:8px">◆ '+nbl.map(r=>he(r.sci)).join('<br>◆ ')+'</div>'):'')
+    +(nbl.length?('<div style="margin-top:8px"><b>Notable recorded:</b><br>◆ '+nbl.map(r=>he(r.sci)).join('<br>◆ ')+'</div>'):'<div style="margin-top:8px;color:#7c8a80">No notable taxa recorded this survey.</div>')
     +'<div style="margin-top:10px;color:#5a4a00">📍 Stop route recording in the OS Maps app, then Export GPX for the traverse line. The GPX span is your route-duration cross-check.</div>';
   el('finishmodal').style.display='flex';
 }
@@ -1205,7 +1207,7 @@ function positionSuggest(){const box=el('suggest');const r=el('addbox').getBound
 window.addEventListener('DOMContentLoaded',()=>{
   showResumeInfo();
   el('pickfile').addEventListener('change',e=>{ if(e.target.files&&e.target.files[0]) readPackFile(e.target.files[0]); });
-  el('compartment').addEventListener('change',()=>{load();toast("Compartment: "+(el('compartment').value||"—"))});
+  el('compartment').addEventListener('change',()=>{load();toast("Compartment: "+(compMeta(el('compartment').value.trim()).name||el('compartment').value||"—"))});
   // durability: force-save the instant the app is backgrounded / pocketed
   function _daforFlush(){try{save();}catch(e){}}
   document.addEventListener("visibilitychange",()=>{if(document.hidden)_daforFlush();});
